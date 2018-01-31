@@ -1,0 +1,5 @@
+{
+    // mklink /D Anaconda2 D:\Users\zheng\Anaconda2
+    "python.pythonPath": "Anaconda2\\python",
+    "python.linting.pylintPath": "Anaconda2\\Scripts\\pylint"
+}
