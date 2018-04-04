@@ -10,6 +10,7 @@ import math
 import random
 import abc
 
+from sortedcontainers import SortedSet
 from pylab import mpl
 import matplotlib.pyplot as plt
 import numpy as np
@@ -48,6 +49,24 @@ def rand_point():
     return x, y, z
 
 
+class Point(object):
+    def __init__(self, index=None, coord=None):
+        self._index = index
+        self._coord = coord
+
+    @property
+    def index(self):
+        if not isinstance(self._index, int):
+            self._index = self._index()
+        return self._index
+
+    @property
+    def coord(self):
+        if not isinstance(self._coord, tuple):
+            self._coord = self._coord()
+        return self._coord
+
+
 class PointSet(object):
     """点集"""
     __metaclass__ = abc.ABCMeta
@@ -57,29 +76,48 @@ class PointSet(object):
 
     @abc.abstractmethod
     def index(self, z):
-        """取某个点的索引"""
+        """取某个坐标（附近）的索引"""
         pass
 
     @abc.abstractmethod
-    def point(self, i):
-        """取某个索引的点"""
+    def coord(self, i):
+        """取某个索引的（准确）坐标"""
         pass
 
-    def near(self, x, y, z):
-        """查找离某坐标最近的样点"""
-        ri, rd = self.n, 4.0
+    def point(self, *payload):
+        if len(payload) == 1:
+            i, = payload
+            return Point(lambda: i, lambda: self.coord(i))
+        _, _, z = payload
+        return Point(lambda: self.index(z), lambda: payload)
+
+    def angle(self, x, y, z):
+        """计算某向量的角度"""
+        # TODO 计算角度，然后确定划分多边形等等
+        pass
+
+    def near(self, payload, n=1):
+        """查找离某坐标或样点最近的样点"""
+        if isinstance(payload, Point):
+            x, y, z = payload.coord
+            index = payload.index
+            rs = SortedSet([(None, 4.0)], key=lambda v: v[1])
+        else:
+            x, y, z = payload
+            index = self.index(z)
+            point = self.point(index)
+            rs = SortedSet([(point, reduce(lambda s, i: s + math.pow(point.coord[i] - payload[i], 2), range(3), 0))], key=lambda v: v[1])
+
         for incre in (-1, 1):
-            i = self.index(z)
+            i = index
             while True:
                 i += incre
                 if i < 0 or i >= self.n:
                     break
-
-                xi, yi, zi = self.point(i)
-                if xi == x and yi == y and zi == z:
-                    continue
+                xi, yi, zi = self.coord(i)
 
                 dz = math.pow(zi - z, 2)
+                rd = rs[n-1 if len(rs) >= n else -1][1]
                 if dz > rd:
                     break
 
@@ -87,18 +125,18 @@ class PointSet(object):
                 if dist > rd:
                     continue
 
-                ri, rd = i, dist
-        return ri, rd
+                rs.add((self.point(i), dist))
+        return rs[0:n]
 
-    def area(self, i):
+    def area(self, point):
         """查找离某样点最近的区域"""
-        x, y, z = self.point(i)
-        while True:
-            i, d = self.near(x, y, z)
-            xn, yn, zn = self.point(i)
-            xa, ya, za = (x + xn) / 2, (y + yn) / 2, (z + zn) / 2
-            yield xn, yn, zn
-            break # TODO
+        x, y, z = point.coord
+        for pi, nd in self.near(point, n=8):
+            xn, yn, zn = pi.coord
+            ca = (x + xn) / 2, (y + yn) / 2, (z + zn) / 2
+            ai, ad = self.near(ca)[0]
+            if ai.index == pi.index or ai.index == point.index:
+                yield ca
 
     def each(self):
         """遍历集合"""
@@ -113,7 +151,7 @@ class Samples(PointSet):
     def index(self, z):
         return int(((z + 1) * self.n - 1) / 2)
 
-    def point(self, i):
+    def coord(self, i):
         z = float(2 * i + 1) / self.n - 1
         rad = math.sqrt(1 - math.pow(z, 2))
         ang = i * self.incre
@@ -131,19 +169,20 @@ def main():
     samples = Samples(300)
     # 均匀采样
     cmap = plt.get_cmap("RdYlGn")
-    for x, y, z in samples.each():
+    for point in samples.each():
+        x, y, z = point.coord
         c = cmap(0.5 + z / 2)
         ax.scatter(x, y, z, c=c)
     # 随机点最近点
     for x, y, z in (rand_point() for _ in range(10)):
         ax.scatter(x, y, z, c='grey')
-        xn, yn, zn = samples.point(samples.near(x, y, z)[0])
+        xn, yn, zn = samples.near((x, y, z))[0][0].coord
         ax.plot((x, xn), (y, yn), (z, zn), color='grey')
     # 样本点管辖域
     for i in (random.randint(0, samples.n - 1) for _ in range(10)):
-        x, y, z = samples.point(i)
+        x, y, z = samples.point(i).coord
         ax.scatter(x, y, z, c='black')
-        for xa, ya, za in samples.area(i):
+        for xa, ya, za in samples.area(samples.point(i)):
             ax.scatter(xa, ya, za, color='black')
 
 
