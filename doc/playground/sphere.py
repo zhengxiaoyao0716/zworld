@@ -5,29 +5,26 @@
 球体建模尝试与验证
 """
 
-import sys
 import math
 import random
 import abc
-
 from sortedcontainers import SortedSet
-from pylab import mpl
 import matplotlib.pyplot as plt
 import numpy as np
-from mpl_toolkits.mplot3d import Axes3D as _
+
+from init_plot import run
 
 range = xrange
 
 
 def draw_sphere(ax, alpha=0.5):
     """绘制球体"""
-    ax.set_aspect('equal')
     u = np.linspace(0, 2 * np.pi, 100)
     v = np.linspace(0, np.pi, 100)
     x = np.outer(np.cos(u), np.sin(v))  # x = R*CosU*SinV
     y = np.outer(np.sin(u), np.sin(v))  # y = R*SinU*SinV
     z = np.outer(np.ones(np.size(u)), np.cos(v))  # z = R*CosV
-    ax.plot_surface(x, y, z,  rstride=5, cstride=5,
+    ax.plot_surface(x, y, z, rstride=5, cstride=5,
                     color='white', linewidth=0, alpha=alpha)
 
     ax.plot(np.zeros(np.size(u)), np.sin(u), np.cos(u),
@@ -91,11 +88,6 @@ class PointSet(object):
         _, _, z = payload
         return Point(lambda: self.index(z), lambda: payload)
 
-    def angle(self, x, y, z):
-        """计算某向量的角度"""
-        # TODO 计算角度，然后确定划分多边形等等
-        pass
-
     def near(self, payload, n=1):
         """查找离某坐标或样点最近的样点"""
         if isinstance(payload, Point):
@@ -106,7 +98,12 @@ class PointSet(object):
             x, y, z = payload
             index = self.index(z)
             point = self.point(index)
-            rs = SortedSet([(point, reduce(lambda s, i: s + math.pow(point.coord[i] - payload[i], 2), range(3), 0))], key=lambda v: v[1])
+            rs = SortedSet([
+                (point, reduce(
+                    lambda s, i: s +
+                    math.pow(point.coord[i] - payload[i], 2), range(3), 0
+                )),
+            ], key=lambda v: v[1])
 
         for incre in (-1, 1):
             i = index
@@ -160,13 +157,14 @@ class Samples(PointSet):
         return x, y, z
 
 
-def main():
+def main(fig):
     """Entrypoint"""
     ax = fig.add_subplot(111, projection='3d')
+    ax.set_aspect('equal')
     plt.title(u'球面坐标建模')
     draw_sphere(ax, 0.1)
 
-    samples = Samples(300)
+    samples = Samples(100)
     # 均匀采样
     cmap = plt.get_cmap("RdYlGn")
     for point in samples.each():
@@ -179,17 +177,11 @@ def main():
         xn, yn, zn = samples.near((x, y, z))[0][0].coord
         ax.plot((x, xn), (y, yn), (z, zn), color='grey')
     # 样本点管辖域
-    for i in (random.randint(0, samples.n - 1) for _ in range(10)):
-        x, y, z = samples.point(i).coord
-        ax.scatter(x, y, z, c='black')
-        for xa, ya, za in samples.area(samples.point(i)):
-            ax.scatter(xa, ya, za, color='black')
+    for point in (samples.point(random.randint(0, samples.n - 1)) for _ in range(10)):
+        ax.scatter(*point.coord, c='black')
+        for coord in samples.area(point):
+            ax.scatter(*coord, color='black')
 
 
 if __name__ == '__main__':
-    mpl.rcParams['font.sans-serif'] = ['SimHei']
-    mpl.rcParams['axes.unicode_minus'] = False
-    fig = plt.figure(figsize=(12, 9), dpi=100)
-    main()
-    sys.stdout.flush()
-    plt.show()
+    run(main)

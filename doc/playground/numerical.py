@@ -6,11 +6,10 @@
 """
 
 from functools import reduce
-import sys
-
-from pylab import mpl
 import matplotlib.pyplot as plt
 import numpy as np
+
+from init_plot import run
 
 
 def plot_area():
@@ -35,8 +34,8 @@ def plot_area():
     plt.plot(x, pval, 'b', label=u'拟合函数（2次）')
     plt.text(x[1], pval[1], ps)
 
-    hight = tuple(float(h) / 10000 for h in (950,
-                  650, 700, 600, 2350, 300, 400))
+    hight = tuple(float(h) / 10000 for h in
+                  (950, 650, 700, 600, 2350, 300, 400))
     plt.plot(x, hight, 'black', label=u'平均海拔 / 10000')
 
 
@@ -47,30 +46,28 @@ def plot_hight(level):
     plt.plot(x, hight, 'r')
 
     x = np.arange(level, 1.01, (1 - level) / 20)
-    p = lambda x: 9000 * ((x - level) / (1 - level)) ** 3.5
+
+    def p(x): return 9000 * ((x - level) / (1 - level)) ** 3.5
     pval = tuple(p(xi) for xi in x)
     plt.plot(x, pval, 'b', label=u'拟合函数（3次）')
 
 
-def main():
+def main(fig):
     """Entrypoint"""
-    plt.subplot(221)
+    plt.subplot(121)
     plt.title(u'各大洲面积特征')
     plt.xlabel(u'index / 7')
     plt.ylabel(u'area / total')
     plot_area()
     plt.legend(loc=4)
 
-    plt.subplot(222)
+    plt.subplot(122)
     plt.title(u'陆地（高于水平面）高度特征')
     plt.xlabel(u'random')
     plt.ylabel(u'hight')
     plot_hight(0.7)
     plt.legend(loc=4)
 
+
 if __name__ == '__main__':
-    mpl.rcParams['font.sans-serif']=['SimHei']
-    plt.figure(figsize=(16, 9), dpi=100)
-    main()
-    sys.stdout.flush()
-    plt.show()
+    run(main)
