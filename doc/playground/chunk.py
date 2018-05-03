@@ -7,6 +7,7 @@
 """
 
 import random
+import math
 from matplotlib import pyplot as plt, figure, axes
 
 from init_plot import run
@@ -17,8 +18,18 @@ range = xrange
 
 def projection(xs, ys, zs):
     """三维坐标到二维投影"""
-    nv = (xs[0], ys[0], zs[0])  # 法向量
-    # TODO 沿法向量方向投影
+    def rotate(us, vs):
+        """二维坐标旋转"""
+        nv = (us[0], vs[0])  # 法向量
+        l = math.sqrt(math.pow(nv[0], 2) + math.pow(nv[1], 2))  # 长度
+        cosa, sina = nv[0] / l, -nv[1] / l  # 旋转角
+        result = [], []
+        for u, v in ((us[i], vs[i]) for i in range(len(us))):
+            result[0].append(u * cosa - v * sina)
+            result[1].append(u * sina + v * cosa)
+        return result
+    xs, ys = rotate(xs, ys)
+    zs, xs = rotate(zs, xs)
     return xs, ys
 
 
