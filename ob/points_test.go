@@ -9,38 +9,59 @@ import (
 
 func TestGathers(*testing.T) {
 	gathers := newGathers(gene, 10)
-	// for _, g := range gathers {
-	// 	fmt.Print(g[2])
-	// }
-	for g := range gathers.all() {
-		fmt.Print(g[2], " ")
+	for coord := range gathers.each() {
+		fmt.Print(coord[2], " ")
 	}
-	fmt.Printf("\n")
-	fmt.Println(gathers.index(-1), gathers.index(-0.9), gathers.index(-0.8), gathers.index(+1))
+	fmt.Println()
+	for _, z := range []float64{-1, -0.5, 0, +0.5, +1} {
+		index := gathers.index(z) // z轴上距离该处最近的样点
+		nearx, neary, nearz := gathers.coord(index)
+		fmt.Printf("z: %f, index: %d, coord: (%f, %f, %f)\n", z, index, nearx, neary, nearz)
+	}
+	fmt.Println()
 
 	g := append(gene, "TestGathers"...)
-	for i := 0; i < 10; i++ {
-		fmt.Println(gathers.near(randPoint(append(g, byte(i)).rand())))
-	}
-
 	analy := [20]int{}
 	for i := 0; i < 1000; i++ {
 		gathers := newGathers(append(g, byte(i)), 10)
 		analy[len(gathers)]++
 	}
-	fmt.Println(analy)
+	for len, num := range analy {
+		fmt.Printf("number of len=%d: %d\n", len, num)
+	}
+	fmt.Println()
 }
 
 func TestSamples(*testing.T) {
-	samples := Samples(1000)
-	for i := range samples.all() {
-		fmt.Println(i)
+	samples := Samples(100)
+	for i := range samples.each() {
+		fmt.Print(i, " ")
 	}
-
+	fmt.Println()
 	g := append(gene, "TestSample"...)
 	for i := 0; i < 10; i++ {
-		fmt.Println(samples.near(randPoint(append(g, byte(i)).rand())))
+		x, y, z := randPoint(append(g, byte(i)).rand())
+		index, dist := samples.near(x, y, z) // 三维坐标上距离该点最近的样点
+		nearx, neary, nearz := samples.coord(index)
+		fmt.Printf("[%f\t%f\t%f\t] | index: %02d, distance: %f, coord: (%f, %f, %f)\n", x, y, z, index, dist, nearx, neary, nearz)
 	}
+	fmt.Println()
+}
+
+func TestProjection(*testing.T) {
+	g := append(gene, "TestProjection"...)
+	index := g.rand().Intn(100)
+	samples := Samples(100)
+	x, y, z := samples.coord(index)
+	xs, ys, zs := []float64{x}, []float64{y}, []float64{z}
+	for coord := range samples.area(index) {
+		xs = append(xs, coord[0])
+		ys = append(ys, coord[1])
+		zs = append(zs, coord[2])
+	}
+	fmt.Println("raw coord:", xs, ys, zs)
+	us, vs := projection(xs, ys, zs)
+	fmt.Println("projected:", us, vs)
 }
 
 // `power, sqrt` or `sin, cos` , witch better?

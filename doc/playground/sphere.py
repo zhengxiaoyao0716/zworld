@@ -47,6 +47,8 @@ def rand_point():
 
 
 class Point(object):
+    """样点"""
+
     def __init__(self, index=None, coord=None):
         self._index = index
         self._coord = coord
@@ -114,7 +116,7 @@ class PointSet(object):
                 xi, yi, zi = self.coord(i)
 
                 dz = math.pow(zi - z, 2)
-                rd = rs[n-1 if len(rs) >= n else -1][1]
+                rd = rs[n - 1 if len(rs) >= n else -1][1]
                 if dz > rd:
                     break
 
@@ -128,10 +130,10 @@ class PointSet(object):
     def area(self, point):
         """查找离某样点最近的区域"""
         x, y, z = point.coord
-        for pi, nd in self.near(point, n=8):
+        for pi, _nd in self.near(point, n=8):
             xn, yn, zn = pi.coord
             ca = (x + xn) / 2, (y + yn) / 2, (z + zn) / 2
-            ai, ad = self.near(ca)[0]
+            ai, _ad = self.near(ca)[0]
             if ai.index == pi.index or ai.index == point.index:
                 yield ca
 

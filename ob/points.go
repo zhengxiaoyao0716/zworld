@@ -4,8 +4,11 @@ import (
 	"math"
 	"math/rand"
 	"sort"
+
+	"github.com/emirpasic/gods/sets/treeset"
 )
 
+// randPoint 随机坐标点
 func randPoint(r *rand.Rand) (float64, float64, float64) {
 	u, v := r.Float64()*2*math.Pi, r.Float64()*math.Pi
 	x := math.Cos(u) * math.Sin(v)
@@ -14,50 +17,113 @@ func randPoint(r *rand.Rand) (float64, float64, float64) {
 	return x, y, z
 }
 
-// Points .
+// Points 点集
 type Points interface {
 	n() int
-	index(z float64) int
-	point(n int) (float64, float64, float64)
+	index(z float64) int                     // 取某个坐标（附近）的索引
+	coord(n int) (float64, float64, float64) // 取某个索引的（准确）坐标
 }
 
-func pointsEach(s Points) chan [3]float64 {
-	iter := make(chan [3]float64)
+// pointsNear 查找离某坐标或样点最近的样点
+func pointsNear(s Points, payload interface{}, n int) chan [2]interface{} {
+	var index int
+	var ok bool
+	var x, y, z float64
+	var rs = treeset.NewWith(func(a, b interface{}) int {
+		aAsserted := a.([2]interface{})[1].(float64)
+		bAsserted := b.([2]interface{})[1].(float64)
+		switch {
+		case aAsserted > bAsserted:
+			return 1
+		case aAsserted < bAsserted:
+			return -1
+		default:
+			return 0
+		}
+	})
+	if index, ok = payload.(int); ok {
+		x, y, z = s.coord(index)
+		rs.Add([2]interface{}{math.NaN, 4.0})
+	} else if xyz, ok := payload.([3]float64); ok {
+		x, y, z = xyz[0], xyz[1], xyz[2]
+		index = s.index(z)
+		cx, cy, cz := s.coord(index)
+		d := math.Pow(cx-x, 2) + math.Pow(cy-y, 2) + math.Pow(cz-z, 2)
+		rs.Add([2]interface{}{index, d})
+	} else {
+		panic("invalid type of payload")
+	}
+
+	for _, incre := range [2]int{-1, 1} {
+		i := index
+		for {
+			i += incre
+			if i < 0 || i >= s.n() {
+				break
+			}
+			xi, yi, zi := s.coord(i)
+
+			dz := math.Pow(zi-z, 2)
+			var rd float64
+			if rs.Size() > n {
+				rd = rs.Values()[n-1].([2]interface{})[1].(float64)
+			} else {
+				rd = rs.Values()[rs.Size()-1].([2]interface{})[1].(float64)
+			}
+			if dz > rd {
+				break
+			}
+
+			dist := math.Pow(xi-x, 2) + math.Pow(yi-y, 2) + dz
+			if dist > rd {
+				continue
+			}
+			rs.Add([2]interface{}{i, dist})
+		}
+	}
+
+	iter := make(chan [2]interface{})
 	go func() {
-		for n := 0; n < s.n(); n++ {
-			x, y, z := s.point(n)
-			iter <- [3]float64{x, y, z}
+		it := rs.Iterator()
+		for i := 0; i < n && it.Next(); i++ {
+			iter <- it.Value().([2]interface{})
 		}
 		close(iter)
 	}()
 	return iter
 }
 
-func pointsNear(s Points, x, y, z float64) (int, float64) {
-	n := s.index(z)
-	ri, rd := n, 4.0
-	for _, incre := range [2]int{-1, 1} {
-		ni := n
-		for {
-			if ni < 0 || ni >= s.n() {
-				break
+// pointsArea 查找离某样点最近的区域
+func pointsArea(s Points, index int) chan [3]float64 {
+	iter := make(chan [3]float64)
+	go func() {
+		x, y, z := s.coord(index)
+		for near := range pointsNear(s, index, 8) {
+			pi, _ := near[0].(int), near[1].(float64)
+			xn, yn, zn := s.coord(pi)
+			ca := [3]float64{(x + xn) / 2, (y + yn) / 2, (z + zn) / 2}
+			_an := <-pointsNear(s, ca, 1)
+			ai, _ := _an[0].(int), _an[1].(float64)
+			if ai == pi || ai == index {
+				iter <- ca
 			}
-			xi, yi, zi := s.point(ni)
-
-			dz := math.Pow(zi-z, 2)
-			if dz > rd {
-				break
-			}
-			ni += incre
-
-			dist := math.Pow(xi-x, 2) + math.Pow(yi-y, 2) + dz
-			if dist > rd {
-				continue
-			}
-			ri, rd = ni-incre, dist
 		}
-	}
-	return ri, rd
+		close(iter)
+	}()
+	return iter
+}
+
+// pointsEach 遍历集合
+func pointsEach(s Points) chan [3]float64 {
+	iter := make(chan [3]float64)
+	go func() {
+		for n := 0; n < s.n(); n++ {
+			x, y, z := s.coord(n)
+			iter <- [3]float64{x, y, z}
+		}
+		close(iter)
+	}()
+	return iter
 }
 
 // Gathers .
@@ -79,6 +145,7 @@ func newGathers(g Gene, gatherN int) Gathers {
 }
 
 // implement PointSet
+
 func (s Gathers) n() int { return len(s) }
 func (s Gathers) index(z float64) int {
 	n := s.n()
@@ -100,12 +167,19 @@ func (s Gathers) index(z float64) int {
 
 	return i
 }
-func (s Gathers) point(n int) (float64, float64, float64) {
+func (s Gathers) coord(n int) (float64, float64, float64) {
 	p := s[n]
 	return p[0], p[1], p[2]
 }
-func (s Gathers) near(x, y, z float64) (int, float64) { return pointsNear(s, x, y, z) }
-func (s Gathers) each() chan [3]float64               { return pointsEach(s) }
+
+// inherit PointSet
+
+func (s Gathers) near(x, y, z float64) (int, float64) {
+	near := <-pointsNear(s, [3]float64{x, y, z}, 1)
+	return near[0].(int), near[1].(float64)
+}
+func (s Gathers) area(index int) chan [3]float64 { return pointsArea(s, index) }
+func (s Gathers) each() chan [3]float64          { return pointsEach(s) }
 
 // Samples .
 type Samples int
@@ -113,9 +187,10 @@ type Samples int
 var incre = 2 * math.Pi * (math.Sqrt(5) - 1) / 2
 
 // implement PointSet
+
 func (s Samples) n() int              { return int(s) }
 func (s Samples) index(z float64) int { return int(((z+1)*float64(s) - 1) / 2) }
-func (s Samples) point(n int) (float64, float64, float64) {
+func (s Samples) coord(n int) (float64, float64, float64) {
 	z := float64(2*n+1)/float64(s) - 1
 	rad := math.Sqrt(1 - math.Pow(z, 2))
 	ang := float64(n) * incre
@@ -123,5 +198,31 @@ func (s Samples) point(n int) (float64, float64, float64) {
 	y := rad * math.Sin(ang)
 	return x, y, z
 }
-func (s Samples) near(x, y, z float64) (int, float64) { return pointsNear(s, x, y, z) }
-func (s Samples) each() chan [3]float64               { return pointsEach(s) }
+
+// inherit PointSet
+
+func (s Samples) near(x, y, z float64) (int, float64) {
+	near := <-pointsNear(s, [3]float64{x, y, z}, 1)
+	return near[0].(int), near[1].(float64)
+}
+func (s Samples) area(index int) chan [3]float64 { return pointsArea(s, index) }
+func (s Samples) each() chan [3]float64          { return pointsEach(s) }
+
+// projection 三维坐标到二维投影
+func projection(xs, ys, zs []float64) ([]float64, []float64) {
+	rotate := func(us, vs []float64) ([]float64, []float64) {
+		u, v := us[0], vs[0]
+		l := math.Sqrt(math.Pow(u, 2) + math.Pow(v, 2))
+		cosa, sina := u/l, -v/l
+		ru, rv := []float64{}, []float64{}
+		for i, u := range us {
+			v := vs[i]
+			ru = append(ru, u*cosa-v*sina)
+			rv = append(rv, u*sina+v*cosa)
+		}
+		return ru, rv
+	}
+	zs, xs = rotate(zs, xs)
+	zs, ys = rotate(zs, ys)
+	return xs, ys
+}

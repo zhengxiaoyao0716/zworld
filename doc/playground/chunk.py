@@ -20,16 +20,16 @@ def projection(xs, ys, zs):
     """三维坐标到二维投影"""
     def rotate(us, vs):
         """二维坐标旋转"""
-        nv = (us[0], vs[0])  # 法向量
-        l = math.sqrt(math.pow(nv[0], 2) + math.pow(nv[1], 2))  # 长度
-        cosa, sina = nv[0] / l, -nv[1] / l  # 旋转角
-        result = [], []
+        u, v = us[0], vs[0]  # 法向量
+        l = math.sqrt(math.pow(u, 2) + math.pow(v, 2))  # 长度
+        cosa, sina = u / l, -v / l  # 旋转角
+        ru, rv = [], []
         for u, v in ((us[i], vs[i]) for i in range(len(us))):
-            result[0].append(u * cosa - v * sina)
-            result[1].append(u * sina + v * cosa)
-        return result
-    xs, ys = rotate(xs, ys)
+            ru.append(u * cosa - v * sina)
+            rv.append(u * sina + v * cosa)
+        return ru, rv
     zs, xs = rotate(zs, xs)
+    zs, ys = rotate(zs, ys)
     return xs, ys
 
 
