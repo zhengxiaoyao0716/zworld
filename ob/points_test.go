@@ -9,23 +9,29 @@ import (
 
 func TestGathers(*testing.T) {
 	gathers := newGathers(gene, 10)
-	for coord := range gathers.each() {
-		fmt.Print(coord[2], " ")
+	for index, coord := range gathers {
+		fmt.Printf("[%d](%f, %f, %f), g: %f\n", index, coord[0], coord[1], coord[2], coord[3])
 	}
-	fmt.Println()
 	for _, z := range []float64{-1, -0.5, 0, +0.5, +1} {
 		index := gathers.index(z) // z轴上距离该处最近的样点
 		nearx, neary, nearz := gathers.coord(index)
-		fmt.Printf("z: %f, index: %d, coord: (%f, %f, %f)\n", z, index, nearx, neary, nearz)
+		fmt.Printf("z: %f, nearest: [%d](%f, %f, %f)\n", z, index, nearx, neary, nearz)
 	}
 	fmt.Println()
 
 	g := append(gene, "TestGathers"...)
-	analy := [20]int{}
+	analy := [15]int{}
+	total := 0.0
 	for i := 0; i < 1000; i++ {
-		gathers := newGathers(append(g, byte(i)), 10)
+		gathers := newGathers(append(g, byte(i)), gatherN)
 		analy[len(gathers)]++
+		sum := 0.0
+		for _, gather := range gathers {
+			sum += gather[3]
+		}
+		total += sum
 	}
+	fmt.Printf("average of total gathers: %f / 1000\n", total)
 	for len, num := range analy {
 		fmt.Printf("number of len=%d: %d\n", len, num)
 	}
@@ -48,20 +54,40 @@ func TestSamples(*testing.T) {
 	fmt.Println()
 }
 
-func TestProjection(*testing.T) {
+func TestProjector(*testing.T) {
 	g := append(gene, "TestProjection"...)
 	index := g.rand().Intn(100)
 	samples := Samples(100)
 	x, y, z := samples.coord(index)
-	xs, ys, zs := []float64{x}, []float64{y}, []float64{z}
+	fmt.Printf("index: %d, coord: (%f, %f, %f)\n", index, x, y, z)
+
+	xs, ys, zs := []float64{x}, []float64{y}, []float64{z} // 原坐标
+	proj := samples.projector(index)
+	u, v, near := proj(x, y, z)
+	us, vs, ns := []float64{u}, []float64{v}, []bool{near} // 投影坐标
+
 	for coord := range samples.area(index) {
 		xs = append(xs, coord[0])
 		ys = append(ys, coord[1])
 		zs = append(zs, coord[2])
+
+		u, v, near := proj(coord[0], coord[1], coord[2])
+		us = append(us, u)
+		vs = append(vs, v)
+		ns = append(ns, near)
 	}
-	fmt.Println("raw coord:", xs, ys, zs)
-	us, vs := projection(xs, ys, zs)
-	fmt.Println("projected:", us, vs)
+	rus, rvs := projection(xs, ys, zs) // 参照坐标
+
+	for i := range xs {
+		x, y, z := xs[i], ys[i], zs[i]
+		u, v, near := proj(x, y, z)
+		ru, rv := rus[i], rvs[i]
+		fmt.Println()
+		fmt.Printf("raw coord: (%f, %f, %f)\n", x, y, z)
+		fmt.Printf("projected: (%f, %f), near?: %t\n", u, v, near)
+		fmt.Printf("reference: (%f, %f)\n", ru, rv)
+	}
+	fmt.Println()
 }
 
 // `power, sqrt` or `sin, cos` , witch better?
@@ -94,4 +120,23 @@ func BenchmarkRandPoint(b *testing.B) {
 			randPointUV(r)
 		}
 	})
+}
+
+// projection 三维坐标到二维投影
+func projection(xs, ys, zs []float64) ([]float64, []float64) {
+	rotate := func(us, vs []float64) ([]float64, []float64) {
+		u, v := us[0], vs[0]
+		l := math.Sqrt(math.Pow(u, 2) + math.Pow(v, 2))
+		cosa, sina := u/l, -v/l
+		ru, rv := []float64{}, []float64{}
+		for i, u := range us {
+			v := vs[i]
+			ru = append(ru, u*cosa-v*sina)
+			rv = append(rv, u*sina+v*cosa)
+		}
+		return ru, rv
+	}
+	zs, xs = rotate(zs, xs)
+	zs, ys = rotate(zs, ys)
+	return xs, ys
 }

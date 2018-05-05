@@ -12,13 +12,21 @@ func NewModel() *Model { return &Model{gene, newGathers(gene, gatherN), Samples(
 
 // Place .
 type Place struct {
-	x, y, z float64
-	// sample  [4]float64 // [x, y, z, gn], `gn` is the
+	x, y, z  float64 // 坐标
+	nearest  int     // 距离最近的样点
+	distance float64 // 到最近点的距离
+	// 坐标投影公式
+	projector func(x, y, z float64) (float64, float64, bool)
 }
 
 // Place create a `Place` object at the point.
 func (m *Model) Place(x, y, z float64) Place {
-	p := Place{x, y, z}
+	nearest, distance := m.samples.near(x, y, z)
+	p := Place{
+		x, y, z,
+		nearest, distance,
+		m.samples.projector(nearest),
+	}
 	// si, _ := m.samples.near(x, y, z)
 	// sx, sy, sz := m.samples.point(sn)
 	// gi, _ := m.gathers.near(sx, sy, sz)

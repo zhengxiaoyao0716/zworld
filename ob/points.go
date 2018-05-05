@@ -138,7 +138,7 @@ func newGathers(g Gene, gatherN int) Gathers {
 		r := append(g, byte(i)).rand()
 		x, y, z := randPoint(r)
 		g := gatherFn(r.Float64())
-		gathers = append(gathers, [4]float64{x, y, z, g})
+		gathers = append(gathers, [4]float64{x, y, z, (1 - level) * g})
 	}
 	sort.Slice(gathers, func(i, j int) bool { return gathers[i][2] < gathers[j][2] })
 	return gathers
@@ -208,21 +208,18 @@ func (s Samples) near(x, y, z float64) (int, float64) {
 func (s Samples) area(index int) chan [3]float64 { return pointsArea(s, index) }
 func (s Samples) each() chan [3]float64          { return pointsEach(s) }
 
-// projection 三维坐标到二维投影
-func projection(xs, ys, zs []float64) ([]float64, []float64) {
-	rotate := func(us, vs []float64) ([]float64, []float64) {
-		u, v := us[0], vs[0]
-		l := math.Sqrt(math.Pow(u, 2) + math.Pow(v, 2))
-		cosa, sina := u/l, -v/l
-		ru, rv := []float64{}, []float64{}
-		for i, u := range us {
-			v := vs[i]
-			ru = append(ru, u*cosa-v*sina)
-			rv = append(rv, u*sina+v*cosa)
-		}
-		return ru, rv
+// projector 生成给定样点的投影函数，投影函数接收三维坐标，返回二维坐标以及该坐标是否仍距样点最近
+func (s Samples) projector(index int) func(x, y, z float64) (float64, float64, bool) {
+	x, y, z := s.coord(index)
+	lena := math.Sqrt(math.Pow(z, 2) + math.Pow(x, 2))
+	cosa, sina := z/lena, -x/lena
+	z = z*cosa - x*sina
+	lenb := math.Sqrt(math.Pow(z, 2) + math.Pow(y, 2))
+	cosb, sinb := z/lenb, -y/lenb
+	return func(x, y, z float64) (float64, float64, bool) {
+		w, u := z*cosa-x*sina, z*sina+x*cosa
+		_, v := w*cosb-y*sinb, w*sinb+y*cosb
+		near, _ := s.near(x, y, z)
+		return u, v, near != index
 	}
-	zs, xs = rotate(zs, xs)
-	zs, ys = rotate(zs, ys)
-	return xs, ys
 }
