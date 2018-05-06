@@ -1,8 +1,14 @@
 package main
 
 import (
+	"fmt"
+	"log"
+	"regexp"
+	"strconv"
+
 	"github.com/kardianos/service"
 
+	"github.com/zhengxiaoyao0716/util/address"
 	"github.com/zhengxiaoyao0716/util/console"
 	"github.com/zhengxiaoyao0716/zcli/client"
 	"github.com/zhengxiaoyao0716/zmodule"
@@ -53,9 +59,37 @@ func initArgs() {
 }
 
 func initCmds() {
-	zmodule.Cmds["ping"] = zmodule.Command{
-		Usage:   "ping",
-		Handler: func(parsed string, args []string) { console.Yes("pong") },
+	zmodule.Cmds["scan"] = zmodule.Command{
+		Usage: "Scan available hosts and ports",
+		Handler: func(parsed string, args []string) {
+			netMap, err := address.ScanNets()
+			if err != nil {
+				log.Fatalln(err)
+			}
+			for name, nets := range netMap {
+				console.Log("[%s]", name)
+				for _, net := range nets {
+					fmt.Println(net.String())
+				}
+				fmt.Println()
+			}
+
+			addr := zmodule.ParseFlag(args).GetString("addr")
+			reg := regexp.MustCompile(`^(.+):(\d+)$`)
+			seps := reg.FindStringSubmatch(addr)
+			host := seps[1]
+			port, err := strconv.Atoi(seps[2])
+			if err != nil {
+				log.Fatalln(err)
+			}
+			console.Log("[Available ports of %s]", host)
+			address.FindPorts(host, port, func(port int, ok bool) bool {
+				if ok {
+					fmt.Print(port, " ")
+				}
+				return false
+			})
+		},
 	}
 	zmodule.Cmds["cli"] = zmodule.Command{
 		Usage:   "Enter the command line",

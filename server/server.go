@@ -3,7 +3,6 @@ package server
 import (
 	"log"
 
-	"github.com/zhengxiaoyao0716/util/console"
 	"github.com/zhengxiaoyao0716/util/cout"
 
 	"github.com/zhengxiaoyao0716/zcli/connect"
@@ -28,5 +27,5 @@ func Run() {
 	if err := server.Start(name, addr); err != nil {
 		log.Fatalln(err)
 	}
-	console.Log("Service start, use `%s cli -addr %s` to connect it.", name, cout.Info(addr))
+	cout.Printf("Service start, use `%s` to connect it.\n", cout.Log("%s cli -addr %s", name, cout.Info(addr)))
 }
