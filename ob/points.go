@@ -1,6 +1,7 @@
 package ob
 
 import (
+	"fmt"
 	"math"
 	"math/rand"
 	"sort"
@@ -181,6 +182,13 @@ func (s Gathers) near(x, y, z float64) (int, float64) {
 func (s Gathers) area(index int) chan [3]float64 { return pointsArea(s, index) }
 func (s Gathers) each() chan [3]float64          { return pointsEach(s) }
 
+// level 计算某大陆核的海拔
+func (s Gathers) level(index int) float64 {
+	r := Gene(fmt.Sprintf("%v%d", s, index)).rand()
+	l := (1+level)/2 + (1-level)/2*r.NormFloat64()/8
+	return math.Max(level, math.Min(l, 1))
+}
+
 // Samples .
 type Samples int
 
@@ -221,5 +229,17 @@ func (s Samples) projector(index int) func(x, y, z float64) (float64, float64, b
 		_, v := w*cosb-y*sinb, w*sinb+y*cosb
 		near, _ := s.near(x, y, z)
 		return u, v, near != index
+	}
+}
+
+// terrain 生成给定样点的地貌函数，地貌函数返回某坐标的海拔、是否属于区块等
+func (s Samples) terrain(index int, gathers Gathers) func(x, y, z float64) (float64, bool) {
+	x, y, z := s.coord(index)
+	gi, gd := gathers.near(x, y, z)
+	gl := gathers.level(gi)
+	return func(x, y, z float64) (float64, bool) {
+		near, dist := s.near(x, y, z)
+		altitude := hightFn(gl - dist/gd) // TODO 根据聚合力度、距离、海拔等位线等确定海拔高度
+		return altitude, near != index
 	}
 }

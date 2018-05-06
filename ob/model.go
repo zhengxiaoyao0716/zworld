@@ -17,6 +17,8 @@ type Place struct {
 	distance float64 // 到最近点的距离
 	// 坐标投影公式
 	projector func(x, y, z float64) (float64, float64, bool)
+	// 地貌计算公式
+	terrain func(x, y, z float64) (float64, bool)
 }
 
 // Place create a `Place` object at the point.
@@ -26,6 +28,7 @@ func (m *Model) Place(x, y, z float64) Place {
 		x, y, z,
 		nearest, distance,
 		m.samples.projector(nearest),
+		m.samples.terrain(nearest, m.gathers),
 	}
 	// si, _ := m.samples.near(x, y, z)
 	// sx, sy, sz := m.samples.point(sn)

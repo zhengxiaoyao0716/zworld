@@ -10,7 +10,12 @@ import (
 func TestGathers(*testing.T) {
 	gathers := newGathers(gene, 10)
 	for index, coord := range gathers {
-		fmt.Printf("[%d](%f, %f, %f), g: %f\n", index, coord[0], coord[1], coord[2], coord[3])
+		level := gathers.level(index)
+		fmt.Printf(
+			"[%d](%f, %f, %f), g: %f, level: %f, altitude: %f\n",
+			index, coord[0], coord[1], coord[2],
+			coord[3], level, hightFn(level),
+		)
 	}
 	for _, z := range []float64{-1, -0.5, 0, +0.5, +1} {
 		index := gathers.index(z) // z轴上距离该处最近的样点
