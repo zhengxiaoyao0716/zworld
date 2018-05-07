@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
-	"regexp"
+	"net"
 	"strconv"
 
 	"github.com/kardianos/service"
@@ -45,20 +45,26 @@ func initInfo() {
 	zmodule.GoVersion = GoVersion
 }
 
-func initArgs() {
+func initArgs() { // 初始化运行参数
 	zmodule.Args["gene"] = zmodule.Argument{
-		Type:    "string",
 		Default: "❤",
 		Usage:   "A random key for the world.",
 	}
-	zmodule.Args["addr"] = zmodule.Argument{
-		Type:    "string",
+	zmodule.Args["server"] = zmodule.Argument{
 		Default: "127.0.0.1:2017",
-		Usage:   "Service address witch to listening.",
+		Usage:   "Main service address.",
+	}
+	zmodule.Args["manager"] = zmodule.Argument{
+		Default: "127.0.0.1:2018",
+		Usage:   "Remote cli manager service address.",
+	}
+	zmodule.Args["route"] = zmodule.Argument{
+		Default: "127.0.0.1:2017",
+		Usage:   "Routes to broadcast the service.",
 	}
 }
 
-func initCmds() {
+func initCmds() { // 初始化本地命令行指令
 	zmodule.Cmds["scan"] = zmodule.Command{
 		Usage: "Scan available hosts and ports",
 		Handler: func(parsed string, args []string) {
@@ -74,11 +80,12 @@ func initCmds() {
 				fmt.Println()
 			}
 
-			addr := zmodule.ParseFlag(args).GetString("addr")
-			reg := regexp.MustCompile(`^(.+):(\d+)$`)
-			seps := reg.FindStringSubmatch(addr)
-			host := seps[1]
-			port, err := strconv.Atoi(seps[2])
+			addr := zmodule.ParseFlag(args).GetString("server")
+			host, _port, err := net.SplitHostPort(addr)
+			if err != nil {
+				log.Fatalln(err)
+			}
+			port, err := strconv.Atoi(_port)
 			if err != nil {
 				log.Fatalln(err)
 			}
@@ -92,7 +99,7 @@ func initCmds() {
 		},
 	}
 	zmodule.Cmds["cli"] = zmodule.Command{
-		Usage:   "Enter the command line",
+		Usage:   "Enter the client of remote cli manager",
 		Handler: func(parsed string, args []string) { client.Start(args) },
 	}
 }
