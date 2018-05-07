@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"net"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/zhengxiaoyao0716/util/address"
 	"github.com/zhengxiaoyao0716/util/console"
+	"github.com/zhengxiaoyao0716/util/cout"
 	"github.com/zhengxiaoyao0716/zcli/client"
 	"github.com/zhengxiaoyao0716/zmodule"
 	"github.com/zhengxiaoyao0716/zworld/server"
@@ -68,6 +70,7 @@ func initCmds() { // 初始化本地命令行指令
 	zmodule.Cmds["scan"] = zmodule.Command{
 		Usage: "Scan available hosts and ports",
 		Handler: func(parsed string, args []string) {
+			// 扫描可用网段
 			netMap, err := address.ScanNets()
 			if err != nil {
 				log.Fatalln(err)
@@ -80,8 +83,12 @@ func initCmds() { // 初始化本地命令行指令
 				fmt.Println()
 			}
 
-			addr := zmodule.ParseFlag(args).GetString("server")
-			host, _port, err := net.SplitHostPort(addr)
+			// 解析地址参数
+			addr := flag.String("addr", "127.0.0.1:2017", "Scan ports from the given port with given host.")
+			flag.CommandLine.Parse(args)
+
+			// 扫描可用端口
+			host, _port, err := net.SplitHostPort(*addr)
 			if err != nil {
 				log.Fatalln(err)
 			}
@@ -89,8 +96,8 @@ func initCmds() { // 初始化本地命令行指令
 			if err != nil {
 				log.Fatalln(err)
 			}
-			console.Log("[Available ports of %s]", host)
-			address.FindPorts(host, port, func(port int, ok bool) bool {
+			console.Log("[Available ports of %s]", cout.Info(host))
+			address.FindPorts("["+host+"]", port, func(port int, ok bool) bool {
 				if ok {
 					fmt.Print(port, " ")
 				}
