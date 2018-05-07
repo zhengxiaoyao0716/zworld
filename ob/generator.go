@@ -23,7 +23,6 @@ var gene = Gene("❤")
 
 func init() {
 	zmodule.Args["gene"] = zmodule.Argument{
-		Type:    "string",
 		Default: gene,
 		Usage:   "Random seed for the generator.",
 	}

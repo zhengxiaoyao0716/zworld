@@ -144,32 +144,26 @@ func evalExpr(raw string, expr ast.Expr, x float64) float64 {
 
 func init() {
 	zmodule.Args["level"] = zmodule.Argument{
-		Type:    "float",
 		Default: level,
 		Usage:   "Average level for earth.",
 	}
 	zmodule.Args["gatherN"] = zmodule.Argument{
-		Type:    "int",
 		Default: gatherN,
 		Usage:   "Number of expect gather center.",
 	}
 	zmodule.Args["gatherExpr"] = zmodule.Argument{
-		Type:    "string",
 		Default: gatherExpr,
 		Usage:   "Polyfit expression for `gather` function.",
 	}
 	zmodule.Args["hightExpr"] = zmodule.Argument{
-		Type:    "string",
 		Default: hightExpr,
 		Usage:   "Polyfit expression for `hight` function.",
 	}
 	zmodule.Args["depthExpr"] = zmodule.Argument{
-		Type:    "string",
 		Default: depthExpr,
 		Usage:   "Polyfit expression for `depth` function.",
 	}
 	zmodule.Args["sampleN"] = zmodule.Argument{
-		Type:    "string",
 		Default: sampleN,
 		Usage:   "Number of samples point.",
 	}
