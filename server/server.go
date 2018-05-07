@@ -3,7 +3,6 @@ package server
 import (
 	"fmt"
 	"log"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/zhengxiaoyao0716/util/cout"
@@ -66,8 +65,8 @@ func startServer() {
 	})
 	go router.Run(config.GetString("server"))
 
-	routes := strings.Fields(config.GetString("route"))
-	for _, route := range routes {
-		fmt.Println(route)
-	}
+	// routes := strings.Fields(config.GetString("route"))
+	// for _, route := range routes {
+	// 	fmt.Println(route)
+	// }
 }
