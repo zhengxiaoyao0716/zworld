@@ -43,10 +43,10 @@ func startManager() {
 }
 
 func startServer() {
-	router := gin.New()
+	engine := gin.New()
 	dir := config.GetString("log")
 	if dir == "" {
-		router.Use(gin.Logger(), gin.Recovery())
+		engine.Use(gin.Logger(), gin.Recovery())
 	} else {
 		logPath := file.AbsPath(dir, fmt.Sprintf(".%s.http.log", info.Name()))
 		logFile, err := safefile.Create(logPath)
@@ -58,15 +58,14 @@ func startServer() {
 		if err != nil {
 			log.Fatalln(err)
 		}
-		router.Use(gin.LoggerWithWriter(logFile), gin.RecoveryWithWriter(errFile))
+		engine.Use(gin.LoggerWithWriter(logFile), gin.RecoveryWithWriter(errFile))
+		gin.DisableConsoleColor()
 	}
-	router.GET("/", func(c *gin.Context) {
+	engine.GET("/", func(c *gin.Context) {
 		c.JSON(200, gin.H{"message": "pong"})
 	})
-	go router.Run(config.GetString("server"))
+	engine.POST("/route", Route)
+	go engine.Run(config.GetString("server"))
 
-	// routes := strings.Fields(config.GetString("route"))
-	// for _, route := range routes {
-	// 	fmt.Println(route)
-	// }
+	initRoute()
 }
