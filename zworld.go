@@ -28,6 +28,7 @@ func main() {
 
 // In this way that override those values,
 // you can use `main` as the module name, instead of `github.com/zhengxiaoyao0716/zmodule`.
+// fuck://scce.ustb.edu.cn/article.action?categoryId=29&boardaId=105&facultyId=579
 var (
 	Version   string // `git describe --tags`
 	Built     string // `date +%FT%T%z`
