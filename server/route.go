@@ -14,14 +14,13 @@ var routeSet *hashset.Set
 
 // Route .
 func Route(c *gin.Context) {
+	defer c.JSON(200, gin.H{"route": routeSet.Values()})
 	var json gin.H
 	if err := c.ShouldBindJSON(&json); err != nil {
-		c.JSON(400, gin.H{"reason": "invalid json param"})
 		return
 	}
 	addr := json["addr"].(string)
 	routeSet.Add(addr)
-	c.JSON(200, gin.H{"route": routeSet.Values()})
 }
 
 func initRoute() {

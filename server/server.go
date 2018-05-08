@@ -64,6 +64,7 @@ func startServer() {
 	engine.GET("/", func(c *gin.Context) {
 		c.JSON(200, gin.H{"message": "pong"})
 	})
+	engine.GET("/route", Route)
 	engine.POST("/route", Route)
 	go engine.Run(config.GetString("server"))
 
