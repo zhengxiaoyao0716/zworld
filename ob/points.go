@@ -9,15 +9,6 @@ import (
 	"github.com/emirpasic/gods/sets/treeset"
 )
 
-// randPoint 随机坐标点
-func randPoint(r *rand.Rand) (float64, float64, float64) {
-	u, v := r.Float64()*2*math.Pi, r.Float64()*math.Pi
-	x := math.Cos(u) * math.Sin(v)
-	y := math.Sin(u) * math.Sin(v)
-	z := math.Cos(v)
-	return x, y, z
-}
-
 // Points 点集
 type Points interface {
 	n() int
@@ -182,12 +173,15 @@ func (s Gathers) near(x, y, z float64) (int, float64) {
 func (s Gathers) area(index int) chan [3]float64 { return pointsArea(s, index) }
 func (s Gathers) each() chan [3]float64          { return pointsEach(s) }
 
-// level 计算某大陆核的海拔
+// level 计算某大陆核的海拔等级
 func (s Gathers) level(index int) float64 {
 	r := Gene(fmt.Sprintf("%v%d", s, index)).rand()
-	l := (1+level)/2 + (1-level)/2*r.NormFloat64()/8
+	l := (1+level)/2 + (1-level)/2*r.NormFloat64()/8 // 在平均陆地海拔上下浮动
 	return math.Max(level, math.Min(l, 1))
 }
+
+// strength 聚合强度
+func (s Gathers) strength(index int) float64 { return s[index][3] }
 
 // Samples .
 type Samples int
@@ -232,14 +226,26 @@ func (s Samples) projector(index int) func(x, y, z float64) (float64, float64, b
 	}
 }
 
-// terrain 生成给定样点的地貌函数，地貌函数返回某坐标的海拔、是否属于区块等
-func (s Samples) terrain(index int, gathers Gathers) func(x, y, z float64) (float64, bool) {
-	x, y, z := s.coord(index)
-	gi, gd := gathers.near(x, y, z)
-	gl := gathers.level(gi)
-	return func(x, y, z float64) (float64, bool) {
-		near, dist := s.near(x, y, z)
-		altitude := hightFn(gl - dist/gd) // TODO 根据聚合力度、距离、海拔等位线等确定海拔高度
-		return altitude, near != index
+// utils
+
+// randPoint 随机坐标点
+func randPoint(r *rand.Rand) (float64, float64, float64) {
+	u, v := r.Float64()*2*math.Pi, r.Float64()*math.Pi
+	x := math.Cos(u) * math.Sin(v)
+	y := math.Sin(u) * math.Sin(v)
+	z := math.Cos(v)
+	return x, y, z
+}
+
+// circumProportion 直线距离的圆周占比
+func circumProportion(dist float64) float64 {
+	if dist == 0 {
+		return 0
 	}
+	if dist == 2 {
+		return 1
+	}
+	sina := dist / 2
+	a := math.Asin(sina)
+	return a / math.Pi
 }

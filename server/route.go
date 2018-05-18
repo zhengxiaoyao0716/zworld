@@ -5,22 +5,19 @@ import (
 	"strings"
 
 	"github.com/emirpasic/gods/sets/hashset"
-	"github.com/gin-gonic/gin"
+	"github.com/zhengxiaoyao0716/util/easyjson"
 	"github.com/zhengxiaoyao0716/util/requests"
 	"github.com/zhengxiaoyao0716/zmodule/config"
 )
 
 var routeSet *hashset.Set
 
-// Route .
-func Route(c *gin.Context) {
-	defer c.JSON(200, gin.H{"route": routeSet.Values()})
-	var json gin.H
-	if err := c.ShouldBindJSON(&json); err != nil {
-		return
+func routeHandler(json *easyjson.Object) easyjson.Object {
+	if json.IsEmpty() {
+		return easyjson.Object{"route": routeSet.Values()}
 	}
-	addr := json["addr"].(string)
-	routeSet.Add(addr)
+	routeSet.Add(string(json.MustStringAt("addr")))
+	return easyjson.Object{"route": routeSet.Values()}
 }
 
 func initRoute() {
@@ -38,6 +35,15 @@ func initRoute() {
 			continue
 		}
 		json := r.JSON()
+		if json == nil {
+			log.Println("invalid response of route: ", route)
+			continue
+		}
+		if _, ok := json["route"]; !ok {
+			log.Printf("invalid response of route: %s, %v.", route, json)
+			continue
+		}
+		// TODO 这里需要校验身份
 		routeSet.Add(json["route"].([]interface{})...)
 		return
 	}

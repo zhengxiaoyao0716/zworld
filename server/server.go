@@ -3,9 +3,12 @@ package server
 import (
 	"fmt"
 	"log"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
 	"github.com/zhengxiaoyao0716/util/cout"
+	"github.com/zhengxiaoyao0716/util/easyjson"
 	"github.com/zhengxiaoyao0716/util/safefile"
 	"github.com/zhengxiaoyao0716/zcli/connect"
 	"github.com/zhengxiaoyao0716/zcli/server"
@@ -42,8 +45,9 @@ func startManager() {
 	cout.Printf("Service start, use `%s` to connect it.\n", cout.Log("%s cli -addr %s", name, cout.Info(addr)))
 }
 
+var engine = gin.New()
+
 func startServer() {
-	engine := gin.New()
 	dir := config.GetString("log")
 	if dir == "" {
 		engine.Use(gin.Logger(), gin.Recovery())
@@ -61,12 +65,84 @@ func startServer() {
 		engine.Use(gin.LoggerWithWriter(logFile), gin.RecoveryWithWriter(errFile))
 		gin.DisableConsoleColor()
 	}
-	engine.GET("/", func(c *gin.Context) {
-		c.JSON(200, gin.H{"message": "pong"})
-	})
-	engine.GET("/route", Route)
-	engine.POST("/route", Route)
+
+	// html
+	engine.LoadHTMLGlob(file.AbsPath("./browser/*.html"))
+	engine.Static("/static", file.AbsPath("./browser/static"))
+	regPage("index.html")
+	regPage("dashboard.html")
+	engine.GET("/", func(c *gin.Context) { c.Redirect(http.StatusTemporaryRedirect, "/index.html") })
+
+	// api
+	engine.GET("/ws", wsHandler)
+	regHandle("/route", routeHandler)
+
 	go engine.Run(config.GetString("server"))
 
 	initRoute()
+}
+
+func regPage(page string) {
+	engine.GET("/"+page, func(c *gin.Context) { c.HTML(http.StatusOK, page, nil) })
+}
+func regHandle(path string, rawHandler func(*easyjson.Object) easyjson.Object) {
+	handler := func(json easyjson.Object) (resp easyjson.Object) {
+		defer func() {
+			err := recover()
+			if err == nil {
+				return
+			}
+			code := 500
+			reason := fmt.Sprint(err)
+			switch err := err.(type) {
+			case *easyjson.ValueNotFoundError:
+				if err.IsRef(&json) {
+					code = 400
+					reason = "missing argument, " + err.Error()
+				}
+			case *easyjson.ValueTypeNotMatchError:
+				if err.IsRef(&json) {
+					code = 400
+					reason = "invalid argument, " + err.Error()
+				}
+			}
+			resp = easyjson.Object{"ok": false, "code": code, "reason": reason}
+		}()
+		resp = rawHandler(&json)
+		_, ok := resp["ok"]
+		if !ok {
+			resp["ok"] = true
+		}
+		return
+	}
+	engine.GET(path, func(c *gin.Context) {
+		json := easyjson.Object{}
+		for key, values := range c.Request.URL.Query() {
+			if len(values) == 1 {
+				json[key] = values[0]
+			} else {
+				json[key] = values
+			}
+		}
+		resp := handler(json)
+		c.JSON(int(resp.MustNumberAt("code", 200)), resp)
+	})
+	engine.POST(path, func(c *gin.Context) {
+		var json, resp easyjson.Object
+		if err := c.ShouldBind(&json); err != nil {
+			resp = handler(nil)
+		}
+		resp = handler(json)
+		c.JSON(int(resp.MustNumberAt("code", 200)), resp)
+	})
+	wsHandlers[path] = func(json map[string]interface{}, conn *websocket.Conn) {
+		id, ok := json["_messageId"]
+		delete(json, "_messageId")
+		resp := handler(json)
+		resp["action"] = path
+		if ok {
+			resp["_messageId"] = id
+		}
+		conn.WriteJSON(resp)
+	}
 }

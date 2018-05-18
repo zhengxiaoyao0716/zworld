@@ -16,6 +16,7 @@ import (
 	"github.com/zhengxiaoyao0716/zmodule/event"
 )
 
+// 以地球为参考，一些关键参数初值设定，一些拟合算法与验证，请参见doc目录下内容。
 var (
 	// 首先，解决水陆比问题，在(0, 1)的随机范围内取水平面
 	level = 0.7 // 海洋71%

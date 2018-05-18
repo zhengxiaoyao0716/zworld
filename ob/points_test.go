@@ -14,7 +14,7 @@ func TestGathers(*testing.T) {
 		fmt.Printf(
 			"[%d](%f, %f, %f), g: %f, level: %f, altitude: %f\n",
 			index, coord[0], coord[1], coord[2],
-			coord[3], level, hightFn(level),
+			gathers.strength(index), level, hightFn(level),
 		)
 	}
 	for _, z := range []float64{-1, -0.5, 0, +0.5, +1} {
@@ -31,8 +31,8 @@ func TestGathers(*testing.T) {
 		gathers := newGathers(append(g, byte(i)), gatherN)
 		analy[len(gathers)]++
 		sum := 0.0
-		for _, gather := range gathers {
-			sum += gather[3]
+		for i := range gathers {
+			sum += gathers.strength(i)
 		}
 		total += sum
 	}
@@ -125,6 +125,11 @@ func BenchmarkRandPoint(b *testing.B) {
 			randPointUV(r)
 		}
 	})
+}
+
+func TestCircumProportion(*testing.T) {
+	fmt.Println("dist=1       (1/6): ", circumProportion(1))
+	fmt.Println("dist=sqrt(2) (1/4): ", circumProportion(math.Sqrt(2)))
 }
 
 // projection 三维坐标到二维投影

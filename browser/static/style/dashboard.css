@@ -1,0 +1,41 @@
+body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+}
+
+.Dash {
+    position: absolute;
+    width: 100vw;
+    height: 100vh;
+    background: #333;
+    color: #eee;
+}
+.Dash .card {
+    background: #444;
+    margin: 2em 1em;
+    padding: 1em;
+}
+
+.Dash .card>* {
+    margin: 0.5em;
+}
+.Dash .card>h3 {
+    display: inline-block;
+    border-bottom: 1px solid #ccc;
+}
+.Dash .card>ul {
+    display: flex;
+    justify-content: space-around;
+}
+.Dash .card>ul>li {
+    margin: 0.5em 2em;
+    min-width: 20%;
+}
+.Dash .card>ul>li>span.name {
+    color: #ccc;
+    margin-right: 0.5em;
+}
+.Dash .card>ul>li>span.value {
+    text-decoration: underline;
+}
