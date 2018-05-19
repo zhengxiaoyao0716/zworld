@@ -48,6 +48,26 @@ func startManager() {
 var engine = gin.New()
 
 func startServer() {
+	initLogger()
+
+	// html
+	engine.LoadHTMLGlob(file.AbsPath("./browser/*.html"))
+	engine.Static("/static", file.AbsPath("./browser/static"))
+	regPage("index.html")
+	regPage("dashboard.html")
+	engine.GET("/", func(c *gin.Context) { c.Redirect(http.StatusTemporaryRedirect, "/index.html") })
+
+	// api
+	engine.GET("/ws", wsHandler)
+	regHandle("/route", routeHandler)
+	regHandle("/api/dashboard", dashboardHandler)
+
+	go engine.Run(config.GetString("server"))
+
+	initRoute()
+}
+
+func initLogger() {
 	dir := config.GetString("log")
 	if dir == "" {
 		engine.Use(gin.Logger(), gin.Recovery())
@@ -65,21 +85,6 @@ func startServer() {
 		engine.Use(gin.LoggerWithWriter(logFile), gin.RecoveryWithWriter(errFile))
 		gin.DisableConsoleColor()
 	}
-
-	// html
-	engine.LoadHTMLGlob(file.AbsPath("./browser/*.html"))
-	engine.Static("/static", file.AbsPath("./browser/static"))
-	regPage("index.html")
-	regPage("dashboard.html")
-	engine.GET("/", func(c *gin.Context) { c.Redirect(http.StatusTemporaryRedirect, "/index.html") })
-
-	// api
-	engine.GET("/ws", wsHandler)
-	regHandle("/route", routeHandler)
-
-	go engine.Run(config.GetString("server"))
-
-	initRoute()
 }
 
 func regPage(page string) {

@@ -16,22 +16,10 @@
         <link rel="stylesheet" href="./static/lib/fontawesome/css/fontawesome-all.css">
     </div>
     <!-- dash -->
-    <div class="Dash">
+    <div id="dashboard">
         <div class="card">
             <h3>Base configuration</h3>
-            <ul>
-                <li>
-                    <span class="name">gene
-                        <i class="fas fa-info-circle" title="A random key for the world."></i>
-                    </span>
-                    <span class="value">❤</span>
-                </li>
-                <li>
-                    <span class="name">gene
-                        <i class="fas fa-info-circle" title="A random key for the world."></i>
-                    </span>
-                    <span class="value">❤</span>
-                </li>
+            <ul id="baseArgs">
                 <li>
                     <span class="name">gene
                         <i class="fas fa-info-circle" title="A random key for the world."></i>
@@ -43,7 +31,7 @@
     </div>
     <!-- scripts -->
     <div style="display: none;">
-        <script src="./static/script/dashboard.js"></script>
+        <script>import('./static/script/dashboard.js');</script>
     </div>
 </body>
 
