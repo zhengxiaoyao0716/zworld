@@ -27,10 +27,19 @@ body {
     color: unset;
     text-decoration: unset;
 }
-#dashboard .card>h3:hover>a::before {
+#dashboard .card>h3:hover>a#hash::before {
     position: absolute;
     left: 0;
     content: "¶";
+}
+#dashboard .card>h3>a#fold {
+    font-size: 0.6em;
+    display: inline-block;
+    transform: scale(-1, -1);
+    transform-origin: center;
+}
+#dashboard .card.fold>h3>a#fold {
+    transform: scale(1, 1);
 }
 #dashboard .card>ul {
     background: #3c3c3c;
@@ -39,6 +48,14 @@ body {
     flex-wrap: wrap;
     padding: 0.5em 0;
     margin-left: 2em;
+    overflow: hidden;
+    max-height: 1000vh;
+    transition: max-height 0.5s;
+    transition-timing-function: cubic-bezier(1, 0, 1, 0);
+}
+#dashboard .card.fold>ul {
+    max-height: 0;
+    transition-timing-function: cubic-bezier(0, 1, 0, 1);
 }
 #dashboard .card>ul>li {
     flex: 1 1 12em;
@@ -49,6 +66,7 @@ body {
 }
 #dashboard .card>ul>li>* {
     display: block;
+    word-break: break-word;
 }
 #dashboard .card>ul>li>span.name {
     color: #ccc;

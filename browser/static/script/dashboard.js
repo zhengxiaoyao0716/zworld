@@ -25,8 +25,14 @@ const html = ({ raw }, ...values) => {
 
 Array.from(document.querySelectorAll('#dashboard>div.card')).forEach(card => {
     card.appendChild(html`<h3>
-        <a href="#${card.id}">${card.getAttribute('data-card-title')}</a>
+        <a href="#${card.id}" id="hash">${card.getAttribute('data-card-title')}</a>
+        <a href="javascript:;" id="fold">⊿</a>
     </h3>`);
+    card.querySelector('#fold').addEventListener('click', () =>
+        card.classList.contains('fold')
+            ? card.classList.remove('fold')
+            : card.classList.add('fold')
+    );
     const ul = html`<ul></ul>`;
     card.appendChild(ul);
     websocket.on('/api/dashboard')(promise => {
