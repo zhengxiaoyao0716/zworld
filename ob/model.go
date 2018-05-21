@@ -1,6 +1,7 @@
 package ob
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"math"
 )
@@ -74,4 +75,11 @@ func (m *Model) terrain(index int, x, y, z float64) func(x, y, z float64) (float
 		// TODO 确定坐标海拔高度，当前为临时方案
 		return altitude, near != index
 	}
+}
+
+// Hash 生成一致性校验用的签名
+func (m *Model) Hash() string {
+	h := sha256.New()
+	h.Write([]byte(fmt.Sprint(m)))
+	return fmt.Sprintf("%x", h.Sum(nil))
 }

@@ -146,35 +146,35 @@ func evalExpr(raw string, expr ast.Expr, x float64) float64 {
 func init() {
 	zmodule.Args["level"] = zmodule.Argument{
 		Default: level,
-		Usage:   "Average level for earth.",
+		Usage:   "[numerical] Average level for earth.",
 	}
 	zmodule.Args["gatherN"] = zmodule.Argument{
 		Default: gatherN,
-		Usage:   "Number of expect gather center.",
+		Usage:   "[numerical] Number of expect gather center.",
 	}
-	zmodule.Args["gatherExpr"] = zmodule.Argument{
+	zmodule.Args["expr-gather"] = zmodule.Argument{
 		Default: gatherExpr,
-		Usage:   "Polyfit expression for `gather` function.",
+		Usage:   "[numerical] Polyfit expression for 'gather' function.",
 	}
-	zmodule.Args["hightExpr"] = zmodule.Argument{
+	zmodule.Args["expr-hight"] = zmodule.Argument{
 		Default: hightExpr,
-		Usage:   "Polyfit expression for `hight` function.",
+		Usage:   "[numerical] Polyfit expression for 'hight' function.",
 	}
-	zmodule.Args["depthExpr"] = zmodule.Argument{
+	zmodule.Args["expr-depth"] = zmodule.Argument{
 		Default: depthExpr,
-		Usage:   "Polyfit expression for `depth` function.",
+		Usage:   "[numerical] Polyfit expression for 'depth' function.",
 	}
 	zmodule.Args["sampleN"] = zmodule.Argument{
 		Default: sampleN,
-		Usage:   "Number of samples point.",
+		Usage:   "[numerical] Number of samples point.",
 	}
 	event.OnInit(func(event.Event) error {
 		event.On(event.KeyStart, func(event.Event) error {
 			level = config.GetNum("level")
 			gatherN = config.GetInt("gatherN")
-			gatherExpr = config.GetString("gatherExpr")
-			hightExpr = config.GetString("hightExpr")
-			depthExpr = config.GetString("depthExpr")
+			gatherExpr = config.GetString("expr-gather")
+			hightExpr = config.GetString("expr-hight")
+			depthExpr = config.GetString("expr-depth")
 			sampleN = config.GetInt("sampleN")
 			initNumerical()
 			return nil

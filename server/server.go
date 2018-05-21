@@ -1,9 +1,11 @@
 package server
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"net/http"
+	"runtime/debug"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -110,6 +112,10 @@ func regHandle(path string, rawHandler func(*easyjson.Object) easyjson.Object) {
 					code = 400
 					reason = "invalid argument, " + err.Error()
 				}
+			default:
+				log.Println(err)
+				stacks := bytes.SplitN(debug.Stack(), []byte("\n"), 8)
+				log.Output(2, string(stacks[7]))
 			}
 			resp = easyjson.Object{"ok": false, "code": code, "reason": reason}
 		}()

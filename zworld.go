@@ -5,8 +5,11 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
 	"strconv"
+	"strings"
 
+	"github.com/fatih/color"
 	"github.com/kardianos/service"
 
 	"github.com/zhengxiaoyao0716/util/address"
@@ -49,9 +52,38 @@ func initInfo() {
 }
 
 func initArgs() { // 初始化运行参数
-	zmodule.Args["gene"] = zmodule.Argument{
-		Default: "❤",
-		Usage:   "A random key for the world.",
+	flag.Usage = func() {
+		if flag.CommandLine.Output() == os.Stderr || flag.CommandLine.Output() == os.Stdout {
+			flag.CommandLine.SetOutput(color.Output)
+		}
+		fmt.Fprintf(flag.CommandLine.Output(), "Usage of %s:\n", cout.Info(os.Args[0]))
+
+		printArg := func(f *flag.Flag) {
+			s := cout.Log("  -%s", f.Name)
+			name, usage := flag.UnquoteUsage(f)
+			if len(name) > 0 {
+				s += " " + name
+			}
+			s += "\n    \t"
+			s += strings.Replace(usage, "\n", "\n    \t", -1)
+			if f.DefValue != "" {
+				s += fmt.Sprintf(" (default %s)", cout.Info(f.DefValue))
+			}
+			fmt.Fprint(flag.CommandLine.Output(), s, "\n")
+		}
+		baseArgs, numerical := server.ArgGroups()
+
+		fmt.Fprint(flag.CommandLine.Output(), cout.Log("[base args]"), "\n")
+		for _, f := range baseArgs {
+			printArg(f)
+		}
+		fmt.Fprintln(flag.CommandLine.Output())
+
+		fmt.Fprint(flag.CommandLine.Output(), cout.Log("[numerical]"), "\n")
+		for _, f := range numerical {
+			printArg(f)
+		}
+		fmt.Fprintln(flag.CommandLine.Output())
 	}
 	zmodule.Args["server"] = zmodule.Argument{
 		Default: "127.0.0.1:2017",
