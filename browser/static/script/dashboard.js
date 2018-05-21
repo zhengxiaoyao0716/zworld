@@ -3,34 +3,46 @@ import * as websocket from './websocket.js';
 
 debug.local && (window.websocket = websocket);
 
-const dashboard = document.querySelector('#dashboard');
-const baseArgs = dashboard.querySelector('#baseArgs');
-
 const html = ({ raw }, ...values) => {
     const div = document.createElement('div');
-    const safe = v => String(v)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-    div.innerHTML = String.raw({ raw }, ...values.map(safe));
-    return div.children;
+    const mapper = v => {
+        if (v instanceof Array || v instanceof HTMLCollection) {
+            return Array.from(v).map(mapper).join('');
+        }
+        if (v instanceof HTMLElement) {
+            return v.innerHTML;
+        }
+        return String(v)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+    div.innerHTML = String.raw({ raw }, ...values.map(mapper));
+    return div.children.length > 1 ? div.children : div.children[0];
 };
 
-websocket.on('/api/dashboard')(promise => {
-    promise.then(({ baseArgs }) => baseArgs.map(({ name, usage, value }) => html`
-        <li>
-            <span class="name">
-                <span>${name}</span>
-                <i class="fas fa-info-circle" title="${usage}"></i>
-            </span>
-            <span class="value">${value || '<none>'}</span>
-        </li>
-    `[0]
-    )).then(eles => {
-        baseArgs.innerHTML = '';
-        baseArgs.append(...eles);
+Array.from(document.querySelectorAll('#dashboard>div.card')).forEach(card => {
+    card.appendChild(html`<h3>
+        <a href="#${card.id}">${card.getAttribute('data-card-title')}</a>
+    </h3>`);
+    const ul = html`<ul></ul>`;
+    card.appendChild(ul);
+    websocket.on('/api/dashboard')(promise => {
+        promise.then(data =>
+            data[card.id].map(([name, usage, value]) => html`
+                <li>
+                    <span class="name">${name}</span>
+                    <i class="desc">${usage}</i>
+                    <span class="value">${value}</span>
+                </li>
+            `)
+        ).then(eles => {
+            ul.innerHTML = '';
+            ul.append(...eles);
+        });
     });
 });
+
 websocket.send('/api/dashboard');

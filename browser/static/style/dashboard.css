@@ -7,14 +7,12 @@ body {
 #dashboard {
     position: absolute;
     width: 100vw;
-    height: 100vh;
+    min-height: 100vh;
     background: #333;
     color: #eee;
 }
 #dashboard .card {
-    background: #444;
-    margin: 2em 1em;
-    padding: 1em;
+    margin: 1em 2em;
 }
 
 #dashboard .card>* {
@@ -22,21 +20,41 @@ body {
 }
 #dashboard .card>h3 {
     display: inline-block;
-    border-bottom: 1px solid #ccc;
+    padding-left: 1em;
+    position: relative;
+}
+#dashboard .card>h3>a {
+    color: unset;
+    text-decoration: unset;
+}
+#dashboard .card>h3:hover>a::before {
+    position: absolute;
+    left: 0;
+    content: "¶";
 }
 #dashboard .card>ul {
+    background: #3c3c3c;
     display: flex;
-    justify-content: space-around;
+    justify-content: space-between;
     flex-wrap: wrap;
+    padding: 0.5em 0;
+    margin-left: 2em;
 }
 #dashboard .card>ul>li {
-    margin: 0.5em 2em;
-    min-width: 20%;
+    flex: 1 1 12em;
+    margin: 0.5em 1em;
+    background: #444;
+    list-style: none;
+    padding: 1em;
+}
+#dashboard .card>ul>li>* {
+    display: block;
 }
 #dashboard .card>ul>li>span.name {
     color: #ccc;
-    margin-right: 0.5em;
 }
-#dashboard .card>ul>li>span.value {
-    text-decoration: underline;
+#dashboard .card>ul>li>i.desc {
+    color: #999;
+    font-size: 0.6em;
+    margin-bottom: 0.5em;
 }
