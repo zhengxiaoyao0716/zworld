@@ -8,7 +8,6 @@ import (
 	"runtime/debug"
 
 	"github.com/gin-gonic/gin"
-	"github.com/gorilla/websocket"
 	"github.com/zhengxiaoyao0716/util/cout"
 	"github.com/zhengxiaoyao0716/util/easyjson"
 	"github.com/zhengxiaoyao0716/util/safefile"
@@ -65,8 +64,7 @@ func startServer() {
 	regHandle("/api/dashboard", dashboardHandler)
 
 	go engine.Run(config.GetString("server"))
-
-	initRoute()
+	go p2pRun()
 }
 
 func initLogger() {
@@ -146,7 +144,7 @@ func regHandle(path string, rawHandler func(*easyjson.Object) easyjson.Object) {
 		resp = handler(json)
 		c.JSON(int(resp.MustNumberAt("code", 200)), resp)
 	})
-	wsHandlers[path] = func(json map[string]interface{}, conn *websocket.Conn) {
+	wsHandlers[path] = func(json map[string]interface{}, conn *Conn) {
 		id, ok := json["_messageId"]
 		delete(json, "_messageId")
 		resp := handler(json)
@@ -154,6 +152,6 @@ func regHandle(path string, rawHandler func(*easyjson.Object) easyjson.Object) {
 		if ok {
 			resp["_messageId"] = id
 		}
-		conn.WriteJSON(resp)
+		conn.send <- resp
 	}
 }

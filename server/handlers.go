@@ -9,6 +9,7 @@ import (
 	"github.com/zhengxiaoyao0716/zmodule"
 	"github.com/zhengxiaoyao0716/zmodule/config"
 	"github.com/zhengxiaoyao0716/zworld/ob"
+	"github.com/zhengxiaoyao0716/zworld/server/chain"
 )
 
 func dashboardHandler(json *easyjson.Object) easyjson.Object {
@@ -24,9 +25,10 @@ func dashboardHandler(json *easyjson.Object) easyjson.Object {
 	// TODO 构建checkArgs，比如关键模型的hash
 	checkArgs := [][3]interface{}{}
 	m := ob.NewModel()
-	checkArgs = append(checkArgs, [3]interface{}{
-		"hash", "hashcode for model.", m.Hash(),
-	})
+	checkArgs = append(checkArgs, [][3]interface{}{
+		{"modal sign", "signature of the model.", m.Signature()},
+		{"chain sign", "signature of the chain.", chain.Signature()},
+	}...)
 	return easyjson.Object{
 		"baseArgs":  baseArgs,
 		"numerical": numerical,

@@ -21,6 +21,9 @@ func (g Gene) rand() *rand.Rand {
 
 var gene = Gene("❤")
 
+// Genesis .
+func Genesis() Gene { return gene }
+
 func init() {
 	zmodule.Args["gene"] = zmodule.Argument{
 		Default: string(gene),

@@ -77,8 +77,8 @@ func (m *Model) terrain(index int, x, y, z float64) func(x, y, z float64) (float
 	}
 }
 
-// Hash 生成一致性校验用的签名
-func (m *Model) Hash() string {
+// Signature of the model.
+func (m *Model) Signature() string {
 	h := sha256.New()
 	h.Write([]byte(fmt.Sprint(m)))
 	return fmt.Sprintf("%x", h.Sum(nil))
