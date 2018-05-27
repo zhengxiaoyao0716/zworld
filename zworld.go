@@ -94,8 +94,8 @@ func initArgs() { // 初始化运行参数
 		Usage:   "Remote cli manager service address.",
 	}
 	zmodule.Args["route"] = zmodule.Argument{
-		Default: "http://127.0.0.1:2017/route",
-		Usage:   "Routes to broadcast the service.",
+		Default: "127.0.0.1:2017",
+		Usage:   "Route list of the p2p network.",
 	}
 }
 

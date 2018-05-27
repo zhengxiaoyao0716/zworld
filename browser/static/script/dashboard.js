@@ -10,18 +10,20 @@ const html = ({ raw }, ...values) => {
             return Array.from(v).map(mapper).join('');
         }
         if (v instanceof HTMLElement) {
-            return v.innerHTML;
+            return v.outerHTML;
         }
-        return String(v)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
+        return v == null ? "" : String(v);
     }
     div.innerHTML = String.raw({ raw }, ...values.map(mapper));
     return div.children.length > 1 ? div.children : div.children[0];
 };
+
+const safe = value => String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 
 Array.from(document.querySelectorAll('#dashboard>div.card')).forEach(card => {
     card.appendChild(html`<h3>
@@ -40,7 +42,7 @@ Array.from(document.querySelectorAll('#dashboard>div.card')).forEach(card => {
             data[card.id].map(([name, usage, value]) => html`
                 <li>
                     <span class="name">${name}</span>
-                    <i class="desc">${usage}</i>
+                    ${usage && html`<i class="desc">${usage}</i>`}
                     <span class="value">${value}</span>
                 </li>
             `)

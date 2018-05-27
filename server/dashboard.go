@@ -10,6 +10,7 @@ import (
 	"github.com/zhengxiaoyao0716/zmodule/config"
 	"github.com/zhengxiaoyao0716/zworld/ob"
 	"github.com/zhengxiaoyao0716/zworld/server/chain"
+	"github.com/zhengxiaoyao0716/zworld/server/secret"
 )
 
 func dashboardHandler(json *easyjson.Object) easyjson.Object {
@@ -22,13 +23,17 @@ func dashboardHandler(json *easyjson.Object) easyjson.Object {
 	for _, f := range _numerical {
 		numerical = append(numerical, [3]interface{}{f.Name, f.Usage, cfg.MustValueAt(f.Name)})
 	}
-	// TODO 构建checkArgs，比如关键模型的hash
 	checkArgs := [][3]interface{}{}
 	m := ob.NewModel()
 	checkArgs = append(checkArgs, [][3]interface{}{
 		{"modal sign", "signature of the model.", m.Signature()},
 		{"chain sign", "signature of the chain.", chain.Signature()},
 	}...)
+	sshKeyValue := secret.Fingerprint()
+	if secret.KeyTitle() != "" {
+		sshKeyValue = secret.KeyTitle() + ": " + sshKeyValue
+	}
+	checkArgs = append(checkArgs, [3]interface{}{"SSH key", nil, sshKeyValue})
 	return easyjson.Object{
 		"baseArgs":  baseArgs,
 		"numerical": numerical,

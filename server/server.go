@@ -43,7 +43,7 @@ func startManager() {
 	if err := server.Start(name, addr); err != nil {
 		log.Fatalln(err)
 	}
-	cout.Printf("Service start, use `%s` to connect it.\n", cout.Log("%s cli -addr %s", name, cout.Info(addr)))
+	cout.Printf("Manager service start, use `%s` to connect it.\n", cout.Log("%s cli -addr %s", name, cout.Info(addr)))
 }
 
 var engine = gin.New()
@@ -62,6 +62,8 @@ func startServer() {
 	engine.GET("/ws", wsHandler)
 	regHandle("/route", routeHandler)
 	regHandle("/api/dashboard", dashboardHandler)
+	regHandle("/chain/update", chainUpdateHandler)
+	regHandle("/chain/query", chainQueryHandler)
 
 	go engine.Run(config.GetString("server"))
 	go p2pRun()
