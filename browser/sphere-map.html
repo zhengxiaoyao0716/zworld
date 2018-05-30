@@ -12,17 +12,26 @@
 <body>
     <!-- links -->
     <div style="display: none;">
-        <link rel="stylesheet" href="./static/style/index.css">
+        <style>
+            body {
+                margin: 0;
+                padding: 0;
+                width: 100%;
+            }
+
+            #threejs {
+                position: absolute;
+                width: 100vw;
+                height: 100vh;
+                overflow: hidden;
+            }
+        </style>
     </div>
-    <!-- sphere-map -->
-    <a id="sphereMap" href="javascript:;" onclick="window.open('./sphere-map.html','sphere-map','height=640,width=640');" title="sphere-map">¤</a>
     <!-- threejs container -->
     <div id="threejs"></div>
     <!-- scripts -->
     <div style="display: none;">
-        <script src="https://threejs.org/examples/js/ImprovedNoise.js"></script>
-        <!-- <script src="https://threejs.org/examples/js/libs/stats.min.js"></script> -->
-        <script>import('./static/script/index.js');</script>
+        <script>import('./static/script/sphereMap.js');</script>
     </div>
 </body>
 

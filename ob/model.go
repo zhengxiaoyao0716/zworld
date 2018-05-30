@@ -53,7 +53,6 @@ func (m *Model) altitude(index int, x, y, z float64) float64 {
 	gi, gd := m.gathers.near(x, y, z)
 	gl := m.gathers.level(gi)
 
-	// TODO 确定聚合力度与区块平均等高线，当前为临时方案
 	gene := append(m.gene, fmt.Sprintf("altitude%d", index)...)
 	rand := gene.rand()
 	wave := circumProportion(gd) / m.gathers.strength(gi) // 距离与聚合力度之比正比于波动力度
@@ -64,16 +63,17 @@ func (m *Model) altitude(index int, x, y, z float64) float64 {
 	level := gl / wave                         // 样点（及所管辖区块）的平均海拔等级
 	level = level + rand.NormFloat64()*level/8 // 对平均海拔等级做一定比例的随机浮动
 
-	return hightFn(level)
+	return altitudeFn(level)
 }
 
 // terrain 生成给定样点的地貌函数，地貌函数返回某坐标的海拔、是否属于区块等
 func (m *Model) terrain(index int, x, y, z float64) func(x, y, z float64) (float64, bool) {
-	altitude := m.altitude(index, x, y, z)
+	altitude := m.altitude(index, x, y, z) // 以这个为海拔基准
+	// TODO 取临近区块海拔，观察起伏，确定波形
 	return func(x, y, z float64) (float64, bool) {
 		near, _ := m.samples.near(x, y, z)
 		// TODO 确定坐标海拔高度，当前为临时方案
-		return altitude, near != index
+		return altitude, near == index
 	}
 }
 

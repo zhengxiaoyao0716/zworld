@@ -25,16 +25,16 @@ var (
 	// 考虑到面积多样化，各聚合力不同，对各大洲面积占比拟合
 	// gatherFn = func(x float64) float64 { return 0.3*x*x - 0.5*x + 0.3 }
 	gatherExpr = "0.3*x*x - 0.5*x + 0.3"
-	// 考虑到陆地海拔分布，随机数 (level, 1) 的范围，映射到高度上（单位米）
+	// 考虑到陆地海拔分布，随机数 (level, 1] 的范围，映射到高度上（单位米）
 	// 水平面0，总平均海拔850米，最高高度8844米，参照海陆起伏曲线进行幂函数拟合
 	// hightFn = func(x float64) float64 { return 9000 * math.Pow(((x-level)/(1-level)), 3.5) }
 	hightExpr = "9000 * math.Pow((x-level)/(1-level), 3.5)"
-	// 类似的，考虑到海洋深度分布，随机数 (0, level) 的范围，映射到深度
+	// 类似的，考虑到海洋深度分布，随机数 (0, level] 的范围，映射到深度
 	// 参照海陆起伏曲线，暂且忽略海沟，将平均深度按4000m算，仅拟合线性部分
 	// depthFn    = func(x float64) float64 { return 8000 * (x - level) / (level) }
 	depthExpr = "8000 * (x - level) / (level)"
-	// 先将球面划分出1k个区块吧
-	sampleN = 1000
+	// 先将球面划分出10k个区块吧
+	sampleN = 10 * 1024
 )
 
 var (
@@ -141,6 +141,13 @@ func evalExpr(raw string, expr ast.Expr, x float64) float64 {
 	}
 
 	return 0
+}
+
+func altitudeFn(x float64) float64 {
+	if x > level {
+		return hightFn(x)
+	}
+	return depthFn(x)
 }
 
 func init() {

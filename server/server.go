@@ -16,6 +16,7 @@ import (
 	"github.com/zhengxiaoyao0716/zmodule/config"
 	"github.com/zhengxiaoyao0716/zmodule/file"
 	"github.com/zhengxiaoyao0716/zmodule/info"
+	"github.com/zhengxiaoyao0716/zworld/server/component"
 )
 
 var name string
@@ -56,12 +57,20 @@ func startServer() {
 	engine.Static("/static", file.AbsPath("./browser/static"))
 	regPage("index.html")
 	regPage("dashboard.html")
+	regPage("sphere-map.html")
 	engine.GET("/", func(c *gin.Context) { c.Redirect(http.StatusTemporaryRedirect, "/index.html") })
 
 	// api
 	engine.GET("/ws", wsHandler)
 	regHandle("/route", routeHandler)
 	regHandle("/api/dashboard", dashboardHandler)
+	regHandle("/api/sphere-map", func(json *easyjson.Object) easyjson.Object {
+		points, projections := component.MyPlaceProjection()
+		return easyjson.Object{"points": points, "projections": projections}
+	})
+	regHandle("/api/world", func(*easyjson.Object) easyjson.Object {
+		return easyjson.Object{}
+	})
 	regHandle("/chain/update", chainUpdateHandler)
 	regHandle("/chain/query", chainQueryHandler)
 
@@ -116,6 +125,7 @@ func regHandle(path string, rawHandler func(*easyjson.Object) easyjson.Object) {
 				log.Println(err)
 				stacks := bytes.SplitN(debug.Stack(), []byte("\n"), 8)
 				log.Output(2, string(stacks[7]))
+				log.Println("recovered from error.")
 			}
 			resp = easyjson.Object{"ok": false, "code": code, "reason": reason}
 		}()

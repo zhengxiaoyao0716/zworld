@@ -11,7 +11,7 @@ export const ready = new Promise(resolve => {
         const data = JSON.parse(e.data);
         const { action, _messageId: id, ok, code, reason, ...body } = data;
         if (!action) {
-            console.error(new Error(`missing 'action' argument in ${data}`));
+            console.error(new Error(`missing 'action' argument,`), data);
             return;
         }
         const handlers = listeners[action] || [];

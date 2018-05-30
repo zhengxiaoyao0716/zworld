@@ -1,6 +1,7 @@
 package ob
 
 import (
+	"github.com/emirpasic/gods/utils"
 	"fmt"
 	"math"
 	"math/rand"
@@ -22,16 +23,13 @@ func pointsNear(s Points, payload interface{}, n int) chan [2]interface{} {
 	var ok bool
 	var x, y, z float64
 	var rs = treeset.NewWith(func(a, b interface{}) int {
-		aAsserted := a.([2]interface{})[1].(float64)
-		bAsserted := b.([2]interface{})[1].(float64)
-		switch {
-		case aAsserted > bAsserted:
-			return 1
-		case aAsserted < bAsserted:
-			return -1
-		default:
-			return 0
+		aAsserted := a.([2]interface{})
+		bAsserted := b.([2]interface{})
+		cmp := utils.Float64Comparator(aAsserted[1], bAsserted[1])
+		if cmp !=0 {
+			return cmp
 		}
+		return utils.IntComparator(aAsserted[0], bAsserted[0])
 	})
 	if index, ok = payload.(int); ok {
 		x, y, z = s.coord(index)

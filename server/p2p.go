@@ -8,13 +8,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/zhengxiaoyao0716/zworld/server/secret"
-
 	"github.com/emirpasic/gods/sets/hashset"
 	"github.com/zhengxiaoyao0716/util/easyjson"
 	"github.com/zhengxiaoyao0716/util/requests"
 	"github.com/zhengxiaoyao0716/zmodule/config"
 	"github.com/zhengxiaoyao0716/zworld/server/chain"
+	"github.com/zhengxiaoyao0716/zworld/server/component"
+	"github.com/zhengxiaoyao0716/zworld/server/secret"
 )
 
 var routeSet struct {
@@ -49,6 +49,10 @@ func p2pRun() {
 	addr := config.GetString("server")
 	syncRoute(addr)
 	joinChain(addr)
+
+	component.Init(component.InitArg{
+		Pubkey: secret.Pubkey(),
+	})
 }
 
 func syncRoute(addr string) {

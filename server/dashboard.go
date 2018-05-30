@@ -8,8 +8,8 @@ import (
 	"github.com/zhengxiaoyao0716/util/easyjson"
 	"github.com/zhengxiaoyao0716/zmodule"
 	"github.com/zhengxiaoyao0716/zmodule/config"
-	"github.com/zhengxiaoyao0716/zworld/ob"
 	"github.com/zhengxiaoyao0716/zworld/server/chain"
+	"github.com/zhengxiaoyao0716/zworld/server/component"
 	"github.com/zhengxiaoyao0716/zworld/server/secret"
 )
 
@@ -24,9 +24,8 @@ func dashboardHandler(json *easyjson.Object) easyjson.Object {
 		numerical = append(numerical, [3]interface{}{f.Name, f.Usage, cfg.MustValueAt(f.Name)})
 	}
 	checkArgs := [][3]interface{}{}
-	m := ob.NewModel()
 	checkArgs = append(checkArgs, [][3]interface{}{
-		{"modal sign", "signature of the model.", m.Signature()},
+		{"modal sign", "signature of the model.", component.ModelSignature()},
 		{"chain sign", "signature of the chain.", chain.Signature()},
 	}...)
 	sshKeyValue := secret.Fingerprint()
