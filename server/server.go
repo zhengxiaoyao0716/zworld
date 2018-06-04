@@ -69,7 +69,9 @@ func startServer() {
 		return easyjson.Object{"points": points, "projections": projections}
 	})
 	regHandle("/api/world", func(*easyjson.Object) easyjson.Object {
-		return easyjson.Object{}
+		return easyjson.Object{
+			"terrain": component.Terrain(),
+		}
 	})
 	regHandle("/chain/update", chainUpdateHandler)
 	regHandle("/chain/query", chainQueryHandler)

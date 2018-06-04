@@ -144,6 +144,13 @@ func evalExpr(raw string, expr ast.Expr, x float64) float64 {
 }
 
 func altitudeFn(x float64) float64 {
+	// ``` LaTeX
+	// altitudeFn(x) = \left\{\begin{matrix}
+	// 	9000 \times \frac{x-level}{1-level}^{3.5}, & x > level \\
+	// 	& \\
+	// 	8000 \times \frac{x - level}{level}, & x \leq  level
+	// \end{matrix}\right.
+	// ```
 	if x > level {
 		return hightFn(x)
 	}

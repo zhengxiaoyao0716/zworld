@@ -40,6 +40,12 @@ var retrieve = treeset.NewWith(func(a, b interface{}) int {
 })
 var run = make(chan func()) // // all the read and write of cache and retrieve should delegate to this channel.
 
+func (tile *TileData) refresh() {
+	retrieve.Remove(tile)
+	*tile = TileData{time.Now().UnixNano(), tile.Coord, tile.Data}
+	retrieve.Add(tile)
+}
+
 // Get .
 func Get(coord [3]float64) []byte {
 	ret := make(chan []byte)
@@ -49,6 +55,7 @@ func Get(coord [3]float64) []byte {
 			ret <- nil
 			return
 		}
+		tile.refresh()
 		ret <- tile.Data
 	}
 	return <-ret
@@ -61,6 +68,7 @@ func Push(coord [3]float64, data []byte) (bool, []byte) {
 	exist := make(chan []byte)
 	run <- func() {
 		if tile, ok := cache[coord]; ok {
+			tile.refresh()
 			okChan <- false
 			exist <- tile.Data
 			return

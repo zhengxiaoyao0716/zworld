@@ -1,0 +1,18 @@
+{
+  "name": "zworld-client",
+  "version": "0.0.1",
+  "description": "Client of ZWorld.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "repository": "https://github.com/zhengxiaoyao0716/zworld",
+  "keywords": [
+    "Electron"
+  ],
+  "author": "zhengxiaoyao0716",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^2.0.2"
+  }
+}

@@ -1,8 +1,6 @@
 import * as debug from './debug.js';
 import * as websocket from './websocket.js';
 
-debug.local && (window.websocket = websocket);
-
 const html = ({ raw }, ...values) => {
     const div = document.createElement('div');
     const mapper = v => {

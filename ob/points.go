@@ -1,13 +1,13 @@
 package ob
 
 import (
-	"github.com/emirpasic/gods/utils"
 	"fmt"
 	"math"
 	"math/rand"
 	"sort"
 
 	"github.com/emirpasic/gods/sets/treeset"
+	"github.com/emirpasic/gods/utils"
 )
 
 // Points 点集
@@ -26,7 +26,7 @@ func pointsNear(s Points, payload interface{}, n int) chan [2]interface{} {
 		aAsserted := a.([2]interface{})
 		bAsserted := b.([2]interface{})
 		cmp := utils.Float64Comparator(aAsserted[1], bAsserted[1])
-		if cmp !=0 {
+		if cmp != 0 {
 			return cmp
 		}
 		return utils.IntComparator(aAsserted[0], bAsserted[0])
@@ -121,6 +121,7 @@ type Gathers [][4]float64 // [x, y, z, g], `g` is the gather strength.
 
 func newGathers(g Gene, gatherN int) Gathers {
 	g = append(g, "gather"...)
+	// X \sim N (\mu, {\sigma ^2}), \mu = gatherN, \sigma = gatherN/4
 	n := float64(gatherN)/4*g.rand().NormFloat64() + float64(gatherN)
 	n = math.Min(math.Max(n, 1), float64(gatherN*2-1)) // [1, 2n-1]
 	var gathers Gathers
@@ -171,7 +172,8 @@ func (s Gathers) near(x, y, z float64) (int, float64) {
 func (s Gathers) area(index int) chan [3]float64 { return pointsArea(s, index) }
 func (s Gathers) each() chan [3]float64          { return pointsEach(s) }
 
-// level 计算某大陆核的海拔等级
+// level 计算某大陆核的海拔等级，
+// X \sim N (\mu, {\sigma ^2}), \mu = \frac{1+level}{2}, \sigma = \frac{1-level}{2 \times 8}
 func (s Gathers) level(index int) float64 {
 	r := Gene(fmt.Sprintf("%v%d", s, index)).rand()
 	l := (1+level)/2 + (1-level)/2*r.NormFloat64()/8 // 在平均陆地海拔上下浮动
@@ -191,6 +193,10 @@ var incre = 2 * math.Pi * (math.Sqrt(5) - 1) / 2
 func (s Samples) n() int              { return int(s) }
 func (s Samples) index(z float64) int { return int(((z+1)*float64(s) - 1) / 2) }
 func (s Samples) coord(n int) (float64, float64, float64) {
+	// z = \frac{2n+1}{N} - 1
+	// x = \sqrt{1 - z^2} \times 2\pi\cos(n \times Inc)
+	// y = \sqrt{1 - z^2} \times 2\pi\sin(n \times Inc)
+	// : Inc = \frac{\sqrt{5}-1}{2}
 	z := float64(2*n+1)/float64(s) - 1
 	rad := math.Sqrt(1 - math.Pow(z, 2))
 	ang := float64(n) * incre
@@ -210,6 +216,12 @@ func (s Samples) each() chan [3]float64          { return pointsEach(s) }
 
 // projector 生成给定样点的投影函数，投影函数接收三维坐标，返回二维坐标以及该坐标是否仍距样点最近
 func (s Samples) projector(index int) func(x, y, z float64) (float64, float64, bool) {
+	// \cos \alpha = \frac{Z}{X^2 + Z^2} \\
+	// \sin \alpha = - \frac{X}{X^2 + Z^2} \\
+	// `Z = Z \cos \alpha - X \sin \alpha \\
+	// w = z \cos \alpha - x \sin \alpha, \lim_{N \to \infty}w \to 0 \\
+	// u = z \sin \alpha + x \cos \alpha \\
+	// v = v = w \frac{-Y}{Y^2 + `Z ^2} + y \frac{`Z}{Y^2 + `Z ^2} \\
 	x, y, z := s.coord(index)
 	lena := math.Sqrt(math.Pow(z, 2) + math.Pow(x, 2))
 	cosa, sina := z/lena, -x/lena
@@ -236,6 +248,7 @@ func randPoint(r *rand.Rand) (float64, float64, float64) {
 }
 
 // circumProportion 直线距离的圆周占比
+// \frac{arcsin \frac{dist}{2}}{\pi}
 func circumProportion(dist float64) float64 {
 	if dist == 0 {
 		return 0
