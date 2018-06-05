@@ -1,4 +1,5 @@
-import * as THREE from './../lib/three.js/three.module.js';
+import * as THREE from './three/index.js';
+
 import * as websocket from './websocket.js';
 
 const container = document.querySelector('#threejs');

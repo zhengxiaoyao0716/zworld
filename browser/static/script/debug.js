@@ -11,6 +11,6 @@ export const exports = local ? async (name, factory) => {
     const mod = { exports: {} };
     Object.defineProperty(mod.exports, '__esModule', { value: true });
     factory(mod.exports)
-    debug[name] = mod.exports;
+    Object.defineProperty(debug, name, { get: () => mod.exports });
     return mod.exports;
 } : async () => { };
