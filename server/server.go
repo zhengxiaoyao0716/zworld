@@ -63,18 +63,30 @@ func startServer() {
 	// api
 	engine.GET("/ws", wsHandler)
 	regHandle("/route", routeHandler)
+	regHandle("/route/chunk/shift", routeShiftChunkHandler)
+	regHandle("/chain/update", chainUpdateHandler)
+	regHandle("/chain/query", chainQueryHandler)
 	regHandle("/api/dashboard", dashboardHandler)
 	regHandle("/api/sphere-map", func(json *easyjson.Object) easyjson.Object {
 		points, projections := component.MyPlaceProjection()
-		return easyjson.Object{"points": points, "projections": projections}
-	})
-	regHandle("/api/world", func(*easyjson.Object) easyjson.Object {
 		return easyjson.Object{
-			"terrain": component.Terrain(),
+			"chunkId": component.TodoMyPlaceChunkIndex(),
+			"points":  points, "projections": projections,
 		}
 	})
-	regHandle("/chain/update", chainUpdateHandler)
-	regHandle("/chain/query", chainQueryHandler)
+	regHandle("/api/world", func(json *easyjson.Object) easyjson.Object {
+		return component.Terrain(json)
+	})
+	regHandle("/api/world/build", func(json *easyjson.Object) easyjson.Object {
+		return component.Build(json)
+	})
+	regHandle("/api/chunk/shift", func(json *easyjson.Object) easyjson.Object {
+		resp := component.ShiftChunk(json)
+		if bool(resp.MustBooleanAt("ok", true)) {
+			notifyChunkShift()
+		}
+		return resp
+	})
 
 	go engine.Run(config.GetString("server"))
 	go p2pRun()

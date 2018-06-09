@@ -43,3 +43,17 @@ export const send = (action, data) => new Promise(resolve => {
     on(action, id)(resolve);
     ready.then(conn => conn.send(JSON.stringify({ action, _messageId: id, ...data })));
 });
+
+export const batchSender = (action, reducer, delay=1000) => {
+    let dataBatch = null;
+    let timeout = null;
+    return data => {
+        timeout != null && clearTimeout(timeout);
+        dataBatch = dataBatch ? reducer(dataBatch, data) : data;
+        timeout = setTimeout(() => {
+            send(action, dataBatch);
+            dataBatch = null;
+            timeout = null;
+        }, delay);
+    };
+};

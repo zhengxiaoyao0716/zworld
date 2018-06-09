@@ -60,6 +60,16 @@ const [renderer, rendererMini] = (() => {
     return [renderer, rendererMini];
 })();
 
+const label = (() => {
+    const label = document.createElement('span');
+    container.appendChild(label);
+    label.style.position = 'absolute';
+    label.style.left = 0;
+    label.style.bottom = 0;
+    label.style.padding = '0.5em';
+    return label;
+})();
+
 (() => {
     const resize = () => {
         camera.aspect = config.aspect;
@@ -108,6 +118,7 @@ const [renderer, rendererMini] = (() => {
 
     websocket.on('/api/sphere-map')(promise => promise
         .then(data => {
+            label.innerText = `ChunkID: ${data.chunkId}`;
             points.geometry.addAttribute('position', new THREE.Float32BufferAttribute(
                 data.points.reduce((ps, p) => [...ps, ...p], []), 3,
             ));

@@ -34,6 +34,7 @@ const packer = Object.entries({ block: block.default }).map(
                     console.error(`missing texture: ${id}.`);
                     return target[404];
                 },
+                has: (target, key, _receiver) => textures.hasOwnProperty(key),
             }),
         };
     }

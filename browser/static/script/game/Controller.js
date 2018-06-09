@@ -4,7 +4,7 @@ import * as debug from './../debug.js';
 
 /**
  * debounce, used such as combo attack.
- * @param {(times: number) => number} action times: trigger times before. return: timeout handler used to cancel.
+ * @param {() => void} action .
  * @param {number} delay .
  */
 export const debounce = (action, delay) => {
@@ -12,12 +12,12 @@ export const debounce = (action, delay) => {
     return (...args) => {
         clearTimeout(timeout);
         timeout = setTimeout(() => action(...args), delay);
-        return timeout;
+        return () => clearTimeout(timeout);
     };
 };
 /**
  * throttle, used such as magic cooldown.
- * @param {() => number} action return: timeout handler used to cancel.
+ * @param {() => void} action .
  * @param {number} period .
  */
 export const throttle = (action, period) => {
@@ -25,21 +25,63 @@ export const throttle = (action, period) => {
     const call = (...args) => {
         action(...args);
         maybeCall = () => { };
-        return setTimeout(() => maybeCall = call, period);
+        const timeout = period >= 0 && setTimeout(() => maybeCall = call, period);
+        return () => {
+            clearTimeout(timeout);
+            maybeCall = call;
+        };
     };
     maybeCall = call;
     return (...args) => maybeCall(...args);
 };
+/**
+ * viscous, used such as long click.
+ * @param {number} thres .
+ * @param {{ short: () => void, long: () => void, hold: (number) => boolean }} actions .
+ * @returns {(number) => void}
+ */
+export const viscous = (actions, thres) => {
+    const {
+        short = () => { }, long = () => { }, hold = number => { }
+    } = actions;
+    let timer = 0;
+    return delta => {
+        if (timer > 0) {
+            if (delta > 0) {
+                timer += delta;
+                if (timer > thres && hold(timer)) {
+                    timer = 0;
+                }
+            } else {
+                timer < thres ? short() : long();
+                timer = 0;
+            }
+        } else {
+            if (delta > 0) {
+                timer = Number.EPSILON;
+            }
+        }
+        return () => timer = 0;
+    }
+};
 
 export const FirstPersonLogic = self => {
     const targetPosition = new THREE.Vector3(0, 0, 0);
-    let autoMove = (period => {
-        let autoMove = false;
-        const trigger = throttle(() => autoMove = !autoMove, period);
-        return () => { self.keys.R && trigger(); return autoMove; };
+    const autoMove = (period => {
+        let autoMove = false, cancel = null;
+        const trigger = throttle(() => autoMove = !autoMove, -1);
+        return () => {
+            self.keys.R ? (cancel = trigger() || cancel) : (cancel && cancel());
+            return autoMove;
+        };
     })(300);
-    let offsetX = 0, offsetY = 0;
 
+    const actions = {
+        LB: viscous({ hold: self.handler.actLeft }, 0.1),
+        RB: throttle(self.handler.actRight, 100),
+    };
+
+    let offsetX = 0, offsetY = 0;
     return delta => {
         if (!self.enabled) {
             return;
@@ -68,6 +110,12 @@ export const FirstPersonLogic = self => {
         targetPosition.y = self.object.position.y + 100 * Math.cos(phi);
         targetPosition.z = self.object.position.z + 100 * Math.sin(phi) * Math.sin(theta);
         self.object.lookAt(targetPosition);
+
+        if (!self.handler) {
+            return;
+        }
+        actions.LB(self.keys.LB ? delta : -1);
+        self.keys.RB && actions.RB();
     };
 }
 
@@ -76,6 +124,7 @@ export default (object, domElement, props) => {
         object, domElement: domElement || window.document,
         clock: null, logic: null, enabled: true,
         moveSpeed: 5.0, jumpSpeed: 5.0, lookSpeed: 1.0, pitchSpeed: 0.5,
+        handler: null,
     };
     props && Object.keys(props).forEach(name => {
         if (!self.hasOwnProperty(name)) {
@@ -196,10 +245,12 @@ export default (object, domElement, props) => {
     document.addEventListener('pointerlockchange', () => {
         if (document.pointerLockElement === self.domElement) {
             keymouse.pointerLocked = true;
+            self.domElement.parentElement.classList.add('pointer-locked');
             self.domElement.addEventListener('mousemove', onMouseMove, false)
             return;
         }
         keymouse.pointerLocked = false;
+        self.domElement.parentElement.classList.remove('pointer-locked');
         self.domElement.removeEventListener('mousemove', onMouseMove, false);
     }, false);
     self.freePointerLock = () => document.exitPointerLock();

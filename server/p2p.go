@@ -17,10 +17,17 @@ import (
 	"github.com/zhengxiaoyao0716/zworld/server/secret"
 )
 
-var routeSet struct {
-	*hashset.Set
-	Add func(...interface{})
+type routeSetType struct {
+	set    map[int]*hashset.Set
+	Add    func(int, string)
+	extend func(...interface{})
+	Has    func(int, string) bool
+	Each   func(func(int, string))
+	All    func() [][2]interface{}
+	Move   func(int, int, string)
 }
+
+var routeSet routeSetType
 
 func routeHandler(json *easyjson.Object) (resp easyjson.Object) {
 	defer func() {
@@ -28,18 +35,26 @@ func routeHandler(json *easyjson.Object) (resp easyjson.Object) {
 		if err != nil {
 			panic(err)
 		}
-		resp = easyjson.Object{"route": routeSet.Values(), "chain": text}
+		resp = easyjson.Object{"route": routeSet.All(), "chain": text}
 	}()
 	if json.IsEmpty() {
 		return
 	}
 	addr := string(json.MustStringAt("addr"))
-	if routeSet.Contains(addr) {
+	if routeSet.Has(-1, addr) {
 		resp = easyjson.Object{"ok": "false", "code": 403, "reason": "address already used, addr: " + addr}
 	}
 	// TODO 验证身份，交换公钥等
-	routeSet.Add(addr)
+	routeSet.Add(-1, addr)
 	return
+}
+func routeShiftChunkHandler(json *easyjson.Object) (resp easyjson.Object) {
+	address := string(json.MustStringAt("addr"))
+	chunkID := int(json.MustNumberAt("id"))
+	old := int(json.MustNumberAt("old", -1))
+	routeSet.Move(old, chunkID, address)
+
+	return easyjson.Object{"cache": component.TodoSearchCacheDump(chunkID)}
 }
 
 func p2pRun() {
@@ -53,6 +68,7 @@ func p2pRun() {
 	component.Init(component.InitArg{
 		Pubkey: secret.Pubkey(),
 	})
+	notifyChunkShift()
 }
 
 func syncRoute(addr string) {
@@ -70,7 +86,7 @@ func syncRoute(addr string) {
 			if err := chain.Load(string(json.MustStringAt("chain"))); err != nil {
 				return err
 			}
-			routeSet.Add(json.MustArrayAt("route")...)
+			routeSet.extend(json.MustArrayAt("route")...)
 			return nil
 		},
 	) {
@@ -86,7 +102,7 @@ func syncRoute(addr string) {
 }
 
 func joinChain(addr string) {
-	block, err := chain.NewBlock(chain.Data{addr, secret.Pubkey()})
+	block, err := chain.NewBlock(chain.Data{Server: addr, Pubkey: secret.Pubkey()})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -98,7 +114,7 @@ func joinChain(addr string) {
 		log.Fatalln(err)
 	}
 	sign := chain.Signature()
-	anyFail := false
+	anyOk := false
 	for err := range p2pBroadcase("/chain/update", map[string]interface{}{"chain": bytes}, func(json *easyjson.Object, route string) error {
 		signature, err := json.StringAt("signature")
 		if err != nil {
@@ -109,24 +125,58 @@ func joinChain(addr string) {
 		}
 		return nil
 	}) {
-		if err != nil {
+		if err == nil {
+			anyOk = true
+		} else {
 			log.Println("join chain failed,", err)
-			anyFail = true
 		}
 	}
-	if anyFail {
+	if !anyOk {
 		log.Fatalln("failed to join the chain.")
 	}
 }
 
+var chunkID = -1
+
+func notifyChunkShift() {
+	id := component.TodoMyPlaceChunkIndex()
+	addr := config.GetString("server")
+
+	anyOk := false
+	for err := range p2pBroadcase(
+		"/route/chunk/shift",
+		map[string]interface{}{"old": chunkID, "id": id, "addr": addr},
+		func(json *easyjson.Object, route string) error {
+			cache, err := json.StringAt("cache")
+			if err != nil {
+				return err
+			}
+			if err := component.TodoCacheLoad(string(cache)); err != nil {
+				return err
+			}
+			return nil
+		},
+	) {
+		if err == nil {
+			anyOk = true
+		} else {
+			log.Println("chunk shift failed,", err)
+		}
+	}
+	if !anyOk {
+		log.Fatalf("failed to shift chunk: %d\n", id)
+	}
+	chunkID = id
+}
+
 func p2pBroadcase(path string, data map[string]interface{}, action func(*easyjson.Object, string) error) chan error {
 	var routes []string
-	if routeSet.Set.Size() == 0 {
+	if len(routeSet.set) == 0 {
 		routes = strings.Fields(config.GetString("route"))
 	} else {
-		for _, route := range routeSet.Values() {
-			routes = append(routes, route.(string))
-		}
+		routeSet.Each(func(_ int, route string) {
+			routes = append(routes, route)
+		})
 	}
 	works := make(chan error, len(routes))
 	req := requests.New(&http.Client{Timeout: 60 * time.Second})
@@ -167,16 +217,91 @@ func p2pBroadcase(path string, data map[string]interface{}, action func(*easyjso
 }
 
 func startRouteSetService() {
-	rs := hashset.New()
-	addQueue := make(chan []interface{}) // routeSet的同步Add队列
+	run := make(chan func()) // routeSet的同步队列
 	go func() {
 		for {
-			items := <-addQueue
-			rs.Add(items...)
+			action := <-run
+			action()
 		}
 	}()
-	routeSet = struct {
-		*hashset.Set
-		Add func(...interface{})
-	}{rs, func(items ...interface{}) { addQueue <- items }}
+	rs := map[int]*hashset.Set{}
+	routeSet = routeSetType{
+		set: rs,
+		Add: func(chunkID int, address string) {
+			wait := make(chan bool)
+			run <- func() {
+				set, ok := rs[chunkID]
+				if !ok {
+					set = hashset.New()
+					rs[chunkID] = set
+				}
+				set.Add(address)
+				wait <- true
+			}
+			<-wait
+		},
+		extend: func(items ...interface{}) {
+			wait := make(chan bool)
+			run <- func() {
+				for _, value := range items {
+					route := value.([]interface{})
+					chunkID := int(route[0].(float64))
+					address := route[1].(string)
+					set, ok := rs[chunkID]
+					if !ok {
+						set = hashset.New()
+						rs[chunkID] = set
+					}
+					set.Add(address)
+				}
+				wait <- true
+			}
+			<-wait
+		},
+		Has: func(chunkID int, adddress string) bool {
+			has := make(chan bool)
+			run <- func() {
+				if set, ok := rs[chunkID]; ok {
+					has <- set.Contains(adddress)
+					return
+				}
+				has <- false
+			}
+			return <-has
+		},
+		Each: func(each func(int, string)) {
+			wait := make(chan bool)
+			run <- func() {
+				for chunkID, set := range rs {
+					for _, value := range set.Values() {
+						each(chunkID, value.(string))
+					}
+				}
+				wait <- true
+			}
+			<-wait
+		},
+		All: func() (entries [][2]interface{}) {
+			routeSet.Each(func(id int, addr string) {
+				entries = append(entries, [2]interface{}{id, addr})
+			})
+			return entries
+		},
+		Move: func(old, chunkID int, address string) {
+			wait := make(chan bool)
+			run <- func() {
+				if set, ok := rs[old]; ok {
+					set.Remove(address)
+				}
+				set, ok := rs[chunkID]
+				if !ok {
+					set = hashset.New()
+					rs[chunkID] = set
+				}
+				set.Add(address)
+				wait <- true
+			}
+			<-wait
+		},
+	}
 }

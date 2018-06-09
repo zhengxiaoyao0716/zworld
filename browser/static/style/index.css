@@ -20,3 +20,20 @@ a#sphereMap {
     height: 100vh;
     overflow: hidden;
 }
+
+#threejs.pointer-locked::after {
+    position: absolute;
+    z-index: 1;
+    left: 50%;
+    top: 50%;
+    width: 2em;
+    height: 2em;
+    margin-left: -1em;
+    margin-top: -1em;
+    font-size: 2em;
+    line-height: 2em;
+    text-align: center;
+    content: "＋";
+    color: #fff;
+    pointer-events: none;
+}

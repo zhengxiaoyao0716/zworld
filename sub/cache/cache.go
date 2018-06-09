@@ -46,6 +46,26 @@ func (tile *TileData) refresh() {
 	retrieve.Add(tile)
 }
 
+// TodoSearch .
+func TodoSearch(chunkID int) chan [5]int {
+	result := make(chan [5]int)
+	run <- func() {
+		for key, value := range cache {
+			if int(key[0]) == chunkID {
+				result <- [5]int{
+					int(value.Coord[0]),
+					int(value.Coord[1]),
+					int(value.Coord[2]),
+					int(value.Data[0]),
+					int(value.Data[1]),
+				}
+			}
+		}
+		close(result)
+	}
+	return result
+}
+
 // Get .
 func Get(coord [3]float64) []byte {
 	ret := make(chan []byte)

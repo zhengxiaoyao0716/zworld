@@ -1,6 +1,6 @@
 // Created with TexturePacker (http://www.codeandweb.com/texturepacker)
 //
-// $TexturePacker:SmartUpdate:f2782057efcf487a5adf9d77e08833c3:3d4e23ae5feb64e80affbd1a22a95eb5:885c0ad081fdb2c71324bf662fc11778$
+// $TexturePacker:SmartUpdate:64af0343bb37c54d3a2c9d88c7e68f13:f1cc30ae2a79db09defba6fc429e0b60:885c0ad081fdb2c71324bf662fc11778$
 //
 // Exporter template: https://github.com/zhengxiaoyao0716/texturepacker-exporter-esmodule
 
@@ -56,8 +56,8 @@ const sprites = {
         name: 'grass_02',
         fullName: 'grass_02.png',
         rect: {
-            x: 128,
-            y: 0,
+            x: 0,
+            y: 32,
             width: 32,
             height: 32,
         },
@@ -67,8 +67,8 @@ const sprites = {
         name: 'grass_03',
         fullName: 'grass_03.png',
         rect: {
-            x: 160,
-            y: 0,
+            x: 32,
+            y: 32,
             width: 32,
             height: 32,
         },
@@ -78,8 +78,8 @@ const sprites = {
         name: 'grass_04',
         fullName: 'grass_04.png',
         rect: {
-            x: 192,
-            y: 0,
+            x: 64,
+            y: 32,
             width: 32,
             height: 32,
         },
@@ -89,10 +89,21 @@ const sprites = {
         name: 'grass_side',
         fullName: 'grass_side.png',
         rect: {
-            x: 224,
-            y: 0,
+            x: 96,
+            y: 32,
             width: 32,
             height: 32,
+        },
+        rotated: false,
+    },
+    'rock': {
+        name: 'rock',
+        fullName: 'rock.png',
+        rect: {
+            x: 0,
+            y: 64,
+            width: 32,
+            height: 30,
         },
         rotated: false,
     },
