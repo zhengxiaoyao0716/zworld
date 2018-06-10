@@ -77,9 +77,9 @@ export const FirstPersonLogic = self => {
     })(300);
 
     const actions = {
-        LB: viscous({ hold: self.handler.actLeft }, 0.1),
+        LB: viscous({ hold: self.handler.actLeft }, Number.EPSILON),
         RB: throttle(self.handler.actRight, 300),
-        select: throttle(() => document.exitPointerLock(), 300),
+        select: viscous({ short: () => document.exitPointerLock() }, Number.POSITIVE_INFINITY),
     };
 
     let offsetX = 0, offsetY = 0;
@@ -112,7 +112,7 @@ export const FirstPersonLogic = self => {
         targetPosition.z = self.object.position.z + 100 * Math.sin(phi) * Math.sin(theta);
         self.object.lookAt(targetPosition);
 
-        self.keys.select && actions.select();
+        actions.select(self.keys.select ? delta : -1);
         if (!self.handler) {
             return;
         }

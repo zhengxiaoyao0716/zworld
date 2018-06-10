@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="Keywords" content="" />
+    <meta name="Description" content="" />
+    <link rel="shortcut icon" href="http://os.zheng0716.com/static/image/favicon.ico" />
+    <title>LOGIN</title>
+    <style>
+        body {
+            background: transparent;
+            font-family: arial, tahoma, 'Microsoft Yahei', '\5b8b\4f53', sans-serif;
+        }
+
+        .Dialog {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            background: linear-gradient(180deg, #6cf, #9ff);
+            padding: 0 1em;
+            border-radius: 1em;
+            text-align: center;
+            color: #eee;
+        }
+
+        .Dialog .label {
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .Dialog input.text {
+            padding: 0.2em 1em;
+            border-radius: 1em;
+            font-size: 1em;
+            text-align: center;
+        }
+
+        .Dialog input.check {
+            -webkit-appearance: radio;
+        }
+
+        .Dialog .tips {
+            font-size: 0.8em;
+            color: #999;
+        }
+
+        .Dialog .bar {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5em;
+        }
+
+        .Dialog a {
+            text-decoration: none;
+            color: #666;
+            font-weight: bold;
+        }
+
+        .Dialog a:hover {
+            color: #000;
+        }
+
+        .Dialog a#dive {
+            width: 5em;
+        }
+
+        .Dialog a#close {
+            position: absolute;
+            right: 0;
+            top: 0;
+            --size: 1.5em;
+            width: var(--size);
+            height: var(--size);
+            font-size: var(--size);
+            color: #eee;
+        }
+
+        .Dialog a#close:hover {
+            color: #fff;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="Dialog">
+        <h3 class="label">ZWorld Client (v0.1)</h3>
+        <input id="url" class="text" type="url" value="http://localhost:2017">
+        <div class="bar">
+            <div>
+                <input id="full" class="check" checked type="checkbox">
+                <span class="tips">Fullscreen?</span>
+            </div>
+            <div>
+                <input id="dev" class="check" type="checkbox">
+                <span class="tips">Devlop mode?</span>
+            </div>
+            <a id="dive" href="javascript:;">DIVE</a>
+        </div>
+        <a id="close" href="javascript:;">x</a>
+    </div>
+    <script>
+        const { ipcRenderer } = require('electron');
+        document.querySelector('#dive').addEventListener('click', () => {
+            const url = document.querySelector('#url').value.trim();
+            const dev = document.querySelector('#dev').checked;
+            const full = document.querySelector('#full').checked;
+            ipcRenderer.send('login', { url, dev, full })
+        });
+        document.querySelector('#close').addEventListener('click', () => window.close());
+    </script>
+</body>
+
+</html>
