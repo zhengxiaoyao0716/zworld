@@ -4,3 +4,4 @@ id_rsa
 id_rsa.pub
 debug
 node_modules/
+release/
