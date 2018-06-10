@@ -78,7 +78,8 @@ export const FirstPersonLogic = self => {
 
     const actions = {
         LB: viscous({ hold: self.handler.actLeft }, 0.1),
-        RB: throttle(self.handler.actRight, 100),
+        RB: throttle(self.handler.actRight, 300),
+        select: throttle(() => document.exitPointerLock(), 300),
     };
 
     let offsetX = 0, offsetY = 0;
@@ -111,6 +112,7 @@ export const FirstPersonLogic = self => {
         targetPosition.z = self.object.position.z + 100 * Math.sin(phi) * Math.sin(theta);
         self.object.lookAt(targetPosition);
 
+        self.keys.select && actions.select();
         if (!self.handler) {
             return;
         }
@@ -257,11 +259,17 @@ export default (object, domElement, props) => {
 
     // 键盘事件
     const onKeyDown = event => {
+        if (!keymouse.pointerLocked) {
+            return;
+        }
         event.preventDefault();
         event.stopPropagation();
         keymouse.buttons[event.keyCode] = true;
     };
     const onKeyUp = event => {
+        if (!keymouse.pointerLocked) {
+            return;
+        }
         event.preventDefault();
         event.stopPropagation();
         keymouse.buttons[event.keyCode] = false;

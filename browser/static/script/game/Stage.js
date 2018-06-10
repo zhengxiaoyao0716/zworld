@@ -37,7 +37,9 @@ const Meshes = texture => {
         block: {},
     };
     const createBlock = (name, ...textureIds) => {
-        const materials = textureIds.map(id => new THREE.MeshLambertMaterial({ map: texture.block[id] }));
+        const materials = textureIds.map(id => new THREE.MeshLambertMaterial({
+            map: texture.block[id], transparent: true,
+        }));
         return {
             /**
              * @param {number[]|{ x: number, y: number, z: number }} position .
@@ -71,6 +73,7 @@ const Meshes = texture => {
                     'grass_side', 'grass_side', 'grass_00', 'dirt', 'grass_side', 'grass_side', // main
                     'grass_01', 'grass_02', 'grass_03', 'grass_04', // extra
                 ],
+                breaking: new Array(6).fill().map((_, i) => `breaking_${i}`),
             },
             {
                 get: (target, key, _receiver) => {
@@ -144,6 +147,8 @@ export default (camera, scene, texture, { sight, requestRender }) => {
     const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
     directionalLight.position.set(1, 1, 0.5).normalize();
     scene.add(directionalLight);
+    const helper = new THREE.Group();
+    scene.add(helper);
     // const stage = new Physijs.Scene();
     // requestRender(() => stage.simulate());
     const stage = new THREE.Group();
@@ -156,6 +161,8 @@ export default (camera, scene, texture, { sight, requestRender }) => {
 
     const handler = (() => {
         const raycaster = new THREE.Raycaster();
+        raycaster.near = camera.near;
+        raycaster.far = camera.far / 10;
         const intersectObjects = () => {
             raycaster.setFromCamera({ x: 0, y: 0 }, camera);
             return raycaster.intersectObjects(stage.children);
@@ -167,6 +174,31 @@ export default (camera, scene, texture, { sight, requestRender }) => {
             '/api/world/build',
             (batch, { block }) => ({ block: [...batch.block, ...block] }),
         );
+        const breakHelper = {
+            breaking: null,
+            target: null,
+            timeout: null,
+            show(target, progress) {
+                this.setTarget(target);
+                const material = 6 * progress | 0;
+                meshes.then(mesh => mesh.block.breaking.create(
+                    target.position, ...new Array(6).fill().map((_, i) => ({ geometry: i, material }))
+                )).then(breaking => {
+                    this.hide();
+                    this.breaking = breaking;
+                    attachGroup(helper, breaking);
+                    this.timeout = setTimeout(() => this.hide(), 500);
+                });
+            },
+            hide() {
+                clearTimeout(this.timeout);
+                this.timeout = null;
+                this.breaking && detachGroup(this.breaking);
+                this.breaking = null;
+            },
+            setTarget(target) { this.target = target; },
+            isTarget(target) { return target == this.target; },
+        };
         return {
             actLeft: timer => {
                 const intersect = intersectObjects();
@@ -174,13 +206,16 @@ export default (camera, scene, texture, { sight, requestRender }) => {
                     return;
                 }
                 const { userData: { group: block } } = intersect[0].object;
-                if (block.userData.durable == null) {
-                    block.userData.durable = 3;
-                    return;
+                if (!breakHelper.isTarget(block)) {
+                    breakHelper.setTarget(block);
+                    block.userData.durable == null && (block.userData.durable = 3);
+                    return true; // 重新计时
                 }
-                if (block.userData.durable > timer) {
-                    return;
+                if (timer < block.userData.durable) {
+                    breakHelper.show(block, timer / block.userData.durable);
+                    return false; // 继续计时
                 }
+                breakHelper.hide();
                 const terrain = detachGroup(block);
                 const position = [block.position.x, block.position.y - 100, block.position.z];
                 meshes.then(mesh => mesh.block.dirt.create(position, 2))
@@ -217,6 +252,9 @@ export default (camera, scene, texture, { sight, requestRender }) => {
         const actived = new Set();
         const nowPosIndex = { xi: 0, zi: 0 };
         const fixPlayerPosition = ({ getY }) => {
+            if (!getY) {
+                return;
+            }
             const [h,] = getY(camera.position.x, camera.position.z);
             h != null && camera.position.z <= h * 100 && (camera.position.y = (h + 2) * 100);
         }

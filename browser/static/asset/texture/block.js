@@ -1,6 +1,6 @@
 // Created with TexturePacker (http://www.codeandweb.com/texturepacker)
 //
-// $TexturePacker:SmartUpdate:64af0343bb37c54d3a2c9d88c7e68f13:f1cc30ae2a79db09defba6fc429e0b60:885c0ad081fdb2c71324bf662fc11778$
+// $TexturePacker:SmartUpdate:9f1dec76f8da2bf1b7abcdc1e511f719:be04cb4356c7a8c2338c6ed9de213b38:885c0ad081fdb2c71324bf662fc11778$
 //
 // Exporter template: https://github.com/zhengxiaoyao0716/texturepacker-exporter-esmodule
 
@@ -12,8 +12,74 @@ const sprites = {
         name: '404',
         fullName: '404.png',
         rect: {
-            x: 0,
+            x: 32,
+            y: 95,
+            width: 32,
+            height: 32,
+        },
+        rotated: false,
+    },
+    'breaking_0': {
+        name: 'breaking_0',
+        fullName: 'breaking_0.png',
+        rect: {
+            x: 95,
             y: 0,
+            width: 32,
+            height: 31,
+        },
+        rotated: false,
+    },
+    'breaking_1': {
+        name: 'breaking_1',
+        fullName: 'breaking_1.png',
+        rect: {
+            x: 32,
+            y: 0,
+            width: 32,
+            height: 31,
+        },
+        rotated: false,
+    },
+    'breaking_2': {
+        name: 'breaking_2',
+        fullName: 'breaking_2.png',
+        rect: {
+            x: 64,
+            y: 0,
+            width: 31,
+            height: 31,
+        },
+        rotated: false,
+    },
+    'breaking_3': {
+        name: 'breaking_3',
+        fullName: 'breaking_3.png',
+        rect: {
+            x: 64,
+            y: 63,
+            width: 32,
+            height: 32,
+        },
+        rotated: false,
+    },
+    'breaking_4': {
+        name: 'breaking_4',
+        fullName: 'breaking_4.png',
+        rect: {
+            x: 0,
+            y: 95,
+            width: 32,
+            height: 32,
+        },
+        rotated: false,
+    },
+    'breaking_5': {
+        name: 'breaking_5',
+        fullName: 'breaking_5.png',
+        rect: {
+            x: 64,
+            y: 95,
             width: 32,
             height: 32,
         },
@@ -24,7 +90,7 @@ const sprites = {
         fullName: 'dirt.png',
         rect: {
             x: 32,
-            y: 0,
+            y: 63,
             width: 32,
             height: 32,
         },
@@ -34,8 +100,8 @@ const sprites = {
         name: 'grass_00',
         fullName: 'grass_00.png',
         rect: {
-            x: 64,
-            y: 0,
+            x: 96,
+            y: 63,
             width: 32,
             height: 32,
         },
@@ -46,7 +112,7 @@ const sprites = {
         fullName: 'grass_01.png',
         rect: {
             x: 96,
-            y: 0,
+            y: 31,
             width: 32,
             height: 32,
         },
@@ -57,7 +123,7 @@ const sprites = {
         fullName: 'grass_02.png',
         rect: {
             x: 0,
-            y: 32,
+            y: 31,
             width: 32,
             height: 32,
         },
@@ -68,7 +134,7 @@ const sprites = {
         fullName: 'grass_03.png',
         rect: {
             x: 32,
-            y: 32,
+            y: 31,
             width: 32,
             height: 32,
         },
@@ -78,8 +144,8 @@ const sprites = {
         name: 'grass_04',
         fullName: 'grass_04.png',
         rect: {
-            x: 64,
-            y: 32,
+            x: 0,
+            y: 63,
             width: 32,
             height: 32,
         },
@@ -89,8 +155,8 @@ const sprites = {
         name: 'grass_side',
         fullName: 'grass_side.png',
         rect: {
-            x: 96,
-            y: 32,
+            x: 64,
+            y: 31,
             width: 32,
             height: 32,
         },
@@ -101,7 +167,7 @@ const sprites = {
         fullName: 'rock.png',
         rect: {
             x: 0,
-            y: 64,
+            y: 0,
             width: 32,
             height: 30,
         },
