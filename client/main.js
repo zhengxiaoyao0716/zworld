@@ -2,14 +2,29 @@ const { app, BrowserWindow, ipcMain } = require('electron');
 
 let win;
 
-const startUp = () => {
+const startUp = process.argv.length > 2 ? () => {
+  const args = process.argv.slice(2).reduce((args, arg, index) => {
+    if (index % 2) {
+      return [...args.slice(0, -1), [...args.slice(-1), arg]];
+    }
+    const matched = arg.match(/^--?(\w+)/);
+    if (!matched || !matched[1]) {
+      throw new Error(`invalid argument: ${arg}`);
+      app.exit(1);
+    }
+    return [...args, [matched[1]]];
+  }, []).reduce((args, arg) => ({ ...args, [arg[0]]: arg[1] == null ? true : arg[1] }), {});
+  console.log('startup with arguments:', args);
+  login(args);
+} : () => {
   const startUp = new BrowserWindow({ width: 600, height: 200, frame: false, transparent: true });
   startUp.loadFile('./login.html');
   win = startUp;
 };
 app.on('ready', startUp);
 
-const login = (_event, { url, dev, full }) => {
+const login = ({ url = 'http://localhost:2017', dev = false, full = false }) => {
+  console.log(`login: ${url}${dev ? ', with develop mode' : ''}${full ? ', with fullscreen' : ''}`);
   const mainWin = new BrowserWindow({
     width: 800, height: 600,
     frame: true, fullscreen: false, resizable: true,
@@ -22,10 +37,10 @@ const login = (_event, { url, dev, full }) => {
   full ? mainWin.setFullScreen(true) : mainWin.maximize();
 
   mainWin.setMenuBarVisibility(false)
-  win.close(); // close startUp.
+  win && win.close(); // close startUp.
   win = mainWin;
 };
-ipcMain.once('login', login);
+ipcMain.once('login', (_event, args) => login(args));
 
 
 app.on('window-all-closed', () => {
