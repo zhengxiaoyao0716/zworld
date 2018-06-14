@@ -1,6 +1,6 @@
 export const local = ({
     "": true, "localhost": true, "127.0.0.1": true, '[::1]': true,
-})[document.location.hostname];
+})[document.location.hostname] || true; // TODO 先强制开启debug，因为区块传送命令需要
 
 const debug = {};
 export default debug;
