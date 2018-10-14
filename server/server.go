@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"log"
+	"mime"
 	"net/http"
 	"runtime/debug"
 
@@ -55,6 +56,7 @@ func startServer() {
 	// html
 	engine.LoadHTMLGlob(file.AbsPath("./browser/*.html"))
 	engine.Static("/static", file.AbsPath("./browser/static"))
+	mime.AddExtensionType(".js", "application/javascript") // chrome新版对type=module的script的content-type有严格要求
 	regPage("index.html")
 	regPage("dashboard.html")
 	regPage("sphere-map.html")

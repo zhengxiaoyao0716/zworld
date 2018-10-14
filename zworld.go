@@ -53,10 +53,11 @@ func initInfo() {
 
 func initArgs() { // 初始化运行参数
 	flag.Usage = func() {
-		if flag.CommandLine.Output() == os.Stderr || flag.CommandLine.Output() == os.Stdout {
-			flag.CommandLine.SetOutput(color.Output)
-		}
-		fmt.Fprintf(flag.CommandLine.Output(), "Usage of %s:\n", cout.Info(os.Args[0]))
+		// Go新版本没有这个Api了。。。
+		// if flag.CommandLine.Output() == os.Stderr || flag.CommandLine.Output() == os.Stdout {
+		flag.CommandLine.SetOutput(color.Output)
+		// }
+		fmt.Fprintf(color.Output, "Usage of %s:\n", cout.Info(os.Args[0]))
 
 		printArg := func(f *flag.Flag) {
 			s := cout.Log("  -%s", f.Name)
@@ -69,21 +70,21 @@ func initArgs() { // 初始化运行参数
 			if f.DefValue != "" {
 				s += fmt.Sprintf(" (default %s)", cout.Info(f.DefValue))
 			}
-			fmt.Fprint(flag.CommandLine.Output(), s, "\n")
+			fmt.Fprint(color.Output, s, "\n")
 		}
 		baseArgs, numerical := server.ArgGroups()
 
-		fmt.Fprint(flag.CommandLine.Output(), cout.Log("[base args]"), "\n")
+		fmt.Fprint(color.Output, cout.Log("[base args]"), "\n")
 		for _, f := range baseArgs {
 			printArg(f)
 		}
-		fmt.Fprintln(flag.CommandLine.Output())
+		fmt.Fprintln(color.Output)
 
-		fmt.Fprint(flag.CommandLine.Output(), cout.Log("[numerical]"), "\n")
+		fmt.Fprint(color.Output, cout.Log("[numerical]"), "\n")
 		for _, f := range numerical {
 			printArg(f)
 		}
-		fmt.Fprintln(flag.CommandLine.Output())
+		fmt.Fprintln(color.Output)
 	}
 	zmodule.Args["server"] = zmodule.Argument{
 		Default: "127.0.0.1:2017",
