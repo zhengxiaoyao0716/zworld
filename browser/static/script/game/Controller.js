@@ -42,7 +42,7 @@ export const throttle = (action, period) => {
  */
 export const viscous = (actions, thres) => {
     const {
-        short = () => { }, long = () => { }, hold = number => { }
+        short = () => { }, long = () => { }, hold = _number => { },
     } = actions;
     let timer = 0;
     return delta => {
@@ -62,7 +62,7 @@ export const viscous = (actions, thres) => {
             }
         }
         return () => timer = 0;
-    }
+    };
 };
 
 export const FirstPersonLogic = self => {
